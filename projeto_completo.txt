@@ -1,0 +1,3256 @@
+
+==================== ./cognitivo/analisador.c ====================
+#include <string.h>
+#include <ctype.h>
+
+#include "analisador.h"
+
+Intencao analisarFrase(
+        Vocabulario *v,
+        const char *frase)
+{
+    char copia[256];
+
+    strncpy(copia, frase, sizeof(copia)-1);
+
+    copia[sizeof(copia)-1] = '\0';
+
+    char *token =
+        strtok(copia, " ,.!?;:\n");
+
+    while(token != NULL)
+    {
+        for(int i = 0; token[i]; i++)
+        {
+            token[i] =
+                tolower(token[i]);
+        }
+
+        Intencao i =
+            interpretarPalavra(
+                v,
+                token);
+
+        if(i != INTENCAO_DESCONHECIDA)
+        {
+            return i;
+        }
+
+        token =
+            strtok(NULL,
+                   " ,.!?;:\n");
+    }
+
+    return INTENCAO_DESCONHECIDA;
+}
+
+==================== ./cognitivo/analisador.h ====================
+#ifndef ANALISADOR_H
+#define ANALISADOR_H
+
+#include "../conhecimento/vocabulario.h"
+
+Intencao analisarFrase(
+        Vocabulario *v,
+        const char *frase);
+
+#endif
+
+==================== ./cognitivo/aprendizagem.c ====================
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "aprendizagem.h"
+
+char *extrairValor(
+        const char *frase,
+        const char *chave)
+{
+    static char valor[256];
+
+    char *pos = strstr(frase, chave);
+
+    if(pos == NULL)
+        return NULL;
+
+    pos += strlen(chave);
+
+    while(*pos == ' ')
+        pos++;
+
+    /* remove "ÃÂ©" */
+    if(strncmp(pos, "ÃÂ© ", 3) == 0)
+        pos += 3;
+
+    /* remove "e" */
+    else if(strncmp(pos, "e ", 2) == 0)
+        pos += 2;
+
+    while(*pos == ' ')
+        pos++;
+
+    strcpy(valor, pos);
+
+    valor[strcspn(valor, "\n?")] = '\0';
+
+    /* remove espaÃÂ§os finais */
+    int fim = strlen(valor) - 1;
+
+    while(fim >= 0 &&
+         (valor[fim] == ' ' ||
+          valor[fim] == '\t'))
+    {
+        valor[fim] = '\0';
+        fim--;
+    }
+printf("\n[DEBUG] valor extraido = '%s'\n", valor);
+    return valor;
+}
+
+int aprenderPerfil(
+        PerfilCrianca *perfil,
+        const char *frase,
+        char *resposta)
+{
+    char copia[256];
+
+    strncpy(
+        copia,
+        frase,
+        sizeof(copia) - 1);
+
+    copia[sizeof(copia) - 1] = '\0';
+
+    for(int i = 0; copia[i]; i++)
+    {
+        copia[i] = tolower(copia[i]);
+    }
+
+    /* ================= NOME ================= */
+
+    if(strstr(copia, "meu nome"))
+    {
+        char *valor =
+            extrairValor(frase, "meu nome");
+
+        if(valor)
+        {
+            strcpy(
+                perfil->nome,
+                valor);
+
+            sprintf(
+                resposta,
+                "Prazer em conhecer-te, %s!",
+                perfil->nome);
+
+            return 1;
+        }
+    }
+
+    /* ================= IDADE ================= */
+
+    int idade;
+
+    if(sscanf(
+        copia,
+        "%*[^0-9]%d",
+        &idade) == 1)
+    {
+        perfil->idade = idade;
+
+        sprintf(
+            resposta,
+            "Entendi! Tens %d anos.",
+            idade);
+
+        return 1;
+    }
+
+    /* ================= COR FAVORITA ================= */
+
+    if(strstr(copia, "cor favorita"))
+    {
+        char *valor =
+            extrairValor(frase, "cor favorita");
+
+        if(valor)
+        {
+            strcpy(
+                perfil->corFavorita,
+                valor);
+
+            sprintf(
+                resposta,
+                "A tua cor favorita e %s. Vou guardar isso.",
+                perfil->corFavorita);
+
+            return 1;
+        }
+    }
+
+    /* ================= ANIMAL FAVORITO ================= */
+
+    if(strstr(copia, "animal favorito"))
+    {
+        char *valor =
+            extrairValor(frase, "animal favorito");
+
+        if(valor)
+        {
+            strcpy(
+                perfil->animalFavorito,
+                valor);
+
+            sprintf(
+                resposta,
+                "Vou lembrar que o teu animal favorito e %s.",
+                perfil->animalFavorito);
+
+            return 1;
+        }
+    }
+
+    /* ================= COMIDA FAVORITA ================= */
+
+    if(strstr(copia, "comida favorita"))
+    {
+        char *valor =
+            extrairValor(frase, "comida favorita");
+
+        if(valor)
+        {
+            strcpy(
+                perfil->comidaFavorita,
+                valor);
+
+            sprintf(
+                resposta,
+                "Vou lembrar que a tua comida favorita e %s.",
+                perfil->comidaFavorita);
+
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+==================== ./cognitivo/aprendizagem.h ====================
+#ifndef APRENDIZAGEM_H
+#define APRENDIZAGEM_H
+
+#include "../memoria/perfil.h"
+
+int aprenderPerfil(
+        PerfilCrianca *perfil,
+        const char *frase,
+        char *resposta);
+
+#endif
+
+==================== ./cognitivo/aprendizagem_conhecimento.c ====================
+#include <stdio.h>
+#include <string.h>
+
+#include "aprendizagem_conhecimento.h"
+
+int aprenderConhecimento(
+        BaseConhecimento *base,
+        const char *frase,
+        char *resposta)
+{
+    char copia[256];
+
+    strcpy(copia, frase);
+
+    copia[
+        strcspn(
+            copia,
+            "\n")] = '\0';
+
+    printf(
+        "\n[DEBUG] aprenderConhecimento recebeu: %s\n",
+        copia);
+
+    /* Ignorar perguntas */
+
+    if(strchr(copia, '?'))
+    {
+        printf("[DEBUG] Pergunta detectada\n");
+        return 0;
+    }
+
+    if(strncmp(copia, "o que", 5) == 0)
+    {
+        printf("[DEBUG] Pergunta detectada\n");
+        return 0;
+    }
+
+    if(strncmp(copia, "quem", 4) == 0)
+    {
+        printf("[DEBUG] Pergunta detectada\n");
+        return 0;
+    }
+
+    if(strncmp(copia, "onde", 4) == 0)
+    {
+        printf("[DEBUG] Pergunta detectada\n");
+        return 0;
+    }
+
+    char *pos = NULL;
+
+    char relacao[100];
+
+    /* foi criado por */
+
+    pos = strstr(
+            copia,
+            " foi criado por ");
+
+    if(pos)
+    {
+        strcpy(
+            relacao,
+            "foi criado por");
+    }
+
+    /* fica em */
+
+    if(pos == NULL)
+    {
+        pos = strstr(
+                copia,
+                " fica em ");
+
+        if(pos)
+        {
+            strcpy(
+                relacao,
+                "fica em");
+        }
+    }
+
+    /* é */
+
+    if(pos == NULL)
+    {
+        pos = strstr(
+                copia,
+                " é ");
+
+        if(pos)
+        {
+            strcpy(
+                relacao,
+                "é");
+        }
+    }
+
+    /* e */
+
+    if(pos == NULL)
+    {
+        pos = strstr(
+                copia,
+                " e ");
+
+        if(pos)
+        {
+            strcpy(
+                relacao,
+                "é");
+        }
+    }
+
+    if(pos == NULL)
+    {
+        printf(
+            "[DEBUG] Nao encontrou separador\n");
+
+        return 0;
+    }
+
+    char sujeito[100];
+    char objeto[200];
+
+    int tamanhoRelacao =
+        strlen(relacao);
+
+    strncpy(
+        sujeito,
+        copia,
+        pos - copia);
+
+    sujeito[
+        pos - copia] = '\0';
+
+    strcpy(
+        objeto,
+        pos + tamanhoRelacao + 2);
+
+    if(strlen(sujeito) == 0 ||
+       strlen(objeto) == 0)
+    {
+        printf(
+            "[DEBUG] sujeito ou objeto vazio\n");
+
+        return 0;
+    }
+
+    printf(
+        "[DEBUG] Sujeito: %s\n",
+        sujeito);
+
+    printf(
+        "[DEBUG] Relacao: %s\n",
+        relacao);
+
+    printf(
+        "[DEBUG] Objeto: %s\n",
+        objeto);
+
+    adicionarRelacao(
+        base,
+        sujeito,
+        relacao,
+        objeto);
+
+    sprintf(
+        resposta,
+        "Aprendi que %s %s %s.",
+        sujeito,
+        relacao,
+        objeto);
+
+    return 1;
+}
+
+==================== ./cognitivo/aprendizagem_conhecimento.h ====================
+#ifndef APRENDIZAGEM_CONHECIMENTO_H
+#define APRENDIZAGEM_CONHECIMENTO_H
+
+#include "../conhecimento/conceitos.h"
+
+int aprenderConhecimento(
+        BaseConhecimento *base,
+        const char *frase,
+        char *resposta);
+
+#endif
+
+==================== ./cognitivo/consulta.c ====================
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "consulta.h"
+
+int responderConsulta(
+        PerfilCrianca *perfil,
+        const char *frase,
+        char *resposta)
+{
+    char copia[256];
+
+    strcpy(copia, frase);
+
+    for(int i = 0; copia[i]; i++)
+    {
+        copia[i] = tolower(copia[i]);
+    }
+
+    /* NOME */
+
+    if(strstr(copia, "qual") &&
+       strstr(copia, "nome"))
+    {
+        if(strlen(perfil->nome) > 0)
+        {
+            sprintf(
+                resposta,
+                "O teu nome e %s.",
+                perfil->nome);
+        }
+        else
+        {
+            sprintf(
+                resposta,
+                "Ainda nÃÂ£o sei o teu nome.");
+        }
+
+        return 1;
+    }
+
+    /* IDADE */
+
+    if(strstr(copia, "qual") &&
+       strstr(copia, "idade"))
+    {
+        if(perfil->idade > 0)
+        {
+            sprintf(
+                resposta,
+                "Tens %d anos.",
+                perfil->idade);
+        }
+        else
+        {
+            sprintf(
+                resposta,
+                "Ainda nÃÂ£o sei a tua idade.");
+        }
+
+        return 1;
+    }
+
+    /* COR FAVORITA */
+
+    if(strstr(copia, "qual") &&
+       strstr(copia, "cor favorita"))
+    {
+        if(strlen(perfil->corFavorita) > 0)
+        {
+            sprintf(
+                resposta,
+                "A tua cor favorita e %s.",
+                perfil->corFavorita);
+        }
+        else
+        {
+            sprintf(
+                resposta,
+                "Ainda nÃÂ£o sei a tua cor favorita.");
+        }
+
+        return 1;
+    }
+
+    /* ANIMAL FAVORITO */
+
+    if(strstr(copia, "qual") &&
+       strstr(copia, "animal favorito"))
+    {
+        if(strlen(perfil->animalFavorito) > 0)
+        {
+            sprintf(
+                resposta,
+                "O teu animal favorito e %s.",
+                perfil->animalFavorito);
+        }
+        else
+        {
+            sprintf(
+                resposta,
+                "Ainda nÃÂ£o sei o teu animal favorito.");
+        }
+
+        return 1;
+    }
+
+    /* COMIDA FAVORITA */
+
+    if(strstr(copia, "qual") &&
+       strstr(copia, "comida favorita"))
+    {
+        if(strlen(perfil->comidaFavorita) > 0)
+        {
+            sprintf(
+                resposta,
+                "A tua comida favorita e %s.",
+                perfil->comidaFavorita);
+        }
+        else
+        {
+            sprintf(
+                resposta,
+                "Ainda nao sei a tua comida favorita.Diz me qual e");
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+==================== ./cognitivo/consulta.h ====================
+#ifndef CONSULTA_H
+#define CONSULTA_H
+
+#include "../memoria/perfil.h"
+
+int responderConsulta(
+        PerfilCrianca *perfil,
+        const char *frase,
+        char *resposta);
+
+#endif
+
+==================== ./cognitivo/consulta_conhecimento.c ====================
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "consulta_conhecimento.h"
+
+int consultarConhecimento(
+        BaseConhecimento *base,
+        const char *frase,
+        char *resposta)
+{
+    char copia[256];
+
+    strcpy(copia, frase);
+
+    copia[
+        strcspn(
+            copia,
+            "\n")] = '\0';
+
+    /* O QUE É */
+
+    if(strstr(copia, "o que é "))
+    {
+        char *pos =
+            strstr(
+                copia,
+                "o que é ");
+
+        pos += 8;
+
+        while(*pos == ' ')
+            pos++;
+
+        if(strncmp(pos, "um ", 3) == 0)
+            pos += 3;
+
+        if(strncmp(pos, "uma ", 4) == 0)
+            pos += 4;
+
+        char assunto[100];
+
+        strcpy(
+            assunto,
+            pos);
+
+        assunto[
+            strcspn(
+                assunto,
+                "?")] = '\0';
+
+        for(int i = 0;
+            i < base->quantidade;
+            i++)
+        {
+            if(strcmp(
+                    base->lista[i].sujeito,
+                    assunto) == 0)
+            {
+                sprintf(
+                    resposta,
+                    "%s %s %s.",
+                    base->lista[i].sujeito,
+                    base->lista[i].relacao,
+                    base->lista[i].objeto);
+
+                return 1;
+            }
+        }
+
+        sprintf(
+            resposta,
+            "Ainda não sei o que é %s.",
+            assunto);
+
+        return 1;
+    }
+
+    /* ONDE FICA */
+
+    if(strstr(copia, "onde fica "))
+    {
+        char *pos =
+            strstr(
+                copia,
+                "onde fica ");
+
+        pos += 10;
+
+        char assunto[100];
+
+        strcpy(
+            assunto,
+            pos);
+
+        assunto[
+            strcspn(
+                assunto,
+                "?")] = '\0';
+
+        for(int i = 0;
+            i < base->quantidade;
+            i++)
+        {
+            if(strcmp(
+                    base->lista[i].sujeito,
+                    assunto) == 0 &&
+               strcmp(
+                    base->lista[i].relacao,
+                    "fica em") == 0)
+            {
+                sprintf(
+                    resposta,
+                    "%s fica em %s.",
+                    base->lista[i].sujeito,
+                    base->lista[i].objeto);
+
+                return 1;
+            }
+        }
+
+        sprintf(
+            resposta,
+            "Ainda não sei onde fica %s.",
+            assunto);
+
+        return 1;
+    }
+
+    /* QUEM CRIOU */
+
+    if(strstr(copia, "quem criou "))
+    {
+        char *pos =
+            strstr(
+                copia,
+                "quem criou ");
+
+        pos += 11;
+
+        char assunto[100];
+
+        strcpy(
+            assunto,
+            pos);
+
+        assunto[
+            strcspn(
+                assunto,
+                "?")] = '\0';
+
+        for(int i = 0;
+            i < base->quantidade;
+            i++)
+        {
+            if(strcmp(
+                    base->lista[i].sujeito,
+                    assunto) == 0 &&
+               strcmp(
+                    base->lista[i].relacao,
+                    "foi criado por") == 0)
+            {
+                sprintf(
+                    resposta,
+                    "%s foi criado por %s.",
+                    base->lista[i].sujeito,
+                    base->lista[i].objeto);
+
+                return 1;
+            }
+        }
+
+        sprintf(
+            resposta,
+            "Ainda não sei quem criou %s.",
+            assunto);
+
+        return 1;
+    }
+
+    return 0;
+}
+
+==================== ./cognitivo/consulta_conhecimento.h ====================
+#ifndef CONSULTA_CONHECIMENTO_H
+#define CONSULTA_CONHECIMENTO_H
+
+#include "../conhecimento/conceitos.h"
+
+int consultarConhecimento(
+        BaseConhecimento *base,
+        const char *frase,
+        char *resposta);
+
+#endif
+
+==================== ./cognitivo/decisor.c ====================
+#include <string.h>
+
+#include "decisor.h"
+
+EventoEmocional decidirEventoEmocional(
+        Tsunade *t,
+        const char *frase,
+        Intencao intencao)
+{
+    (void)t;
+
+    if(frase == NULL)
+        return EVENTO_NEUTRO;
+
+    /* Palavras têm prioridade */
+
+    if(strstr(frase,"obrigado") != NULL)
+        return EVENTO_ELOGIO;
+
+    if(strstr(frase,"parabéns") != NULL)
+        return EVENTO_ELOGIO;
+
+    if(strstr(frase,"brincar") != NULL)
+        return EVENTO_BRINCADEIRA;
+
+    if(strstr(frase,"jogar") != NULL)
+        return EVENTO_BRINCADEIRA;
+
+    /* Depois usa a intenção */
+
+    switch(intencao)
+    {
+        case INTENCAO_ESTUDO:
+            return EVENTO_APRENDEU;
+
+        case INTENCAO_AJUDA:
+            return EVENTO_PERGUNTA;
+
+        case INTENCAO_EMOCIONAL:
+            return EVENTO_PERGUNTA;
+
+        case INTENCAO_JOGO:
+            return EVENTO_BRINCADEIRA;
+
+        default:
+            return EVENTO_NEUTRO;
+    }
+}
+==================== ./cognitivo/decisor.h ====================
+#ifndef DECISOR_H
+#define DECISOR_H
+
+#include "../core/tsunade.h"
+#include "../cognitivo/interpretador.h"
+#include "../personalidade/gestor_emocional.h"
+
+EventoEmocional decidirEventoEmocional(
+        Tsunade *t,
+        const char *frase,
+        Intencao intencao);
+
+#endif
+==================== ./cognitivo/inferencia.c ====================
+#include <string.h>
+
+#include "inferencia.h"
+
+int inferirRelacao(
+        BaseConhecimento *base,
+        const char *origem,
+        const char *destino)
+{
+    for(int i = 0; i < base->quantidade; i++)
+    {
+        if(strcmp(base->lista[i].sujeito, origem) == 0 &&
+           strcmp(base->lista[i].relacao, "Ã©") == 0)
+        {
+            char intermediario[100];
+
+            strcpy(
+                intermediario,
+                base->lista[i].objeto);
+
+            for(int j = 0; j < base->quantidade; j++)
+            {
+                if(strcmp(
+                        base->lista[j].sujeito,
+                        intermediario) == 0 &&
+                   strcmp(
+                        base->lista[j].relacao,
+                        "Ã©") == 0 &&
+                   strcmp(
+                        base->lista[j].objeto,
+                        destino) == 0)
+                {
+                    return 1;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+==================== ./cognitivo/inferencia.h ====================
+#ifndef INFERENCIA_H
+#define INFERENCIA_H
+
+#include "../conhecimento/conceitos.h"
+
+int inferirRelacao(
+        BaseConhecimento *base,
+        const char *origem,
+        const char *destino);
+
+#endif
+==================== ./cognitivo/interpretador.c ====================
+#include <stdio.h>
+#include <string.h>
+#include "interpretador.h"
+#include <ctype.h>
+
+void paraMinusculas(char *dest, const char *orig)
+{
+    int i = 0;
+
+    while(orig[i] != '\0')
+    {
+        dest[i] = tolower((unsigned char)orig[i]);
+        i++;
+    }
+
+    dest[i] = '\0';
+}
+
+static int contem(const char *texto,
+                  const char *palavra)
+{
+    return strstr(texto, palavra) != NULL;
+}
+
+Intencao interpretar(const char *frase)
+{
+    char texto[256];
+
+    paraMinusculas(texto, frase);
+
+    if(contem(texto, "ola") ||
+       contem(texto, "oi"))
+    {
+        return INTENCAO_SAUDACAO;
+    }
+
+    if(contem(texto, "historia"))
+    {
+        return INTENCAO_HISTORIA;
+    }
+
+    if(contem(texto, "matematica") ||
+       contem(texto, "estudar"))
+    {
+        return INTENCAO_ESTUDO;
+    }
+
+    if(contem(texto, "jogo") ||
+       contem(texto, "jogar"))
+    {
+        return INTENCAO_JOGO;
+    }
+
+    if(contem(texto, "triste") ||
+       contem(texto, "feliz"))
+    {
+        return INTENCAO_EMOCIONAL;
+    }
+
+    if(contem(texto, "ajuda"))
+    {
+        return INTENCAO_AJUDA;
+    }
+
+    if(contem(texto, "adeus") ||
+       contem(texto, "tchau"))
+    {
+        return INTENCAO_DESPEDIDA;
+    }
+
+    return INTENCAO_DESCONHECIDA;
+}
+
+const char *nomeIntencao(Intencao i)
+{
+    switch(i)
+    {
+        case INTENCAO_SAUDACAO:
+            return "SAUDACAO";
+
+        case INTENCAO_HISTORIA:
+            return "HISTORIA";
+
+        case INTENCAO_ESTUDO:
+            return "ESTUDO";
+
+        case INTENCAO_JOGO:
+            return "JOGO";
+
+        case INTENCAO_EMOCIONAL:
+            return "EMOCIONAL";
+
+        case INTENCAO_AJUDA:
+            return "AJUDA";
+
+        case INTENCAO_DESPEDIDA:
+            return "DESPEDIDA";
+
+        default:
+            return "DESCONHECIDA";
+    }
+}
+
+==================== ./cognitivo/interpretador.h ====================
+#ifndef INTERPRETADOR_H
+#define INTERPRETADOR_H
+
+typedef enum {
+
+    INTENCAO_DESCONHECIDA,
+
+    INTENCAO_SAUDACAO,
+
+    INTENCAO_HISTORIA,
+
+    INTENCAO_ESTUDO,
+
+    INTENCAO_JOGO,
+
+    INTENCAO_EMOCIONAL,
+
+    INTENCAO_AJUDA,
+
+    INTENCAO_DESPEDIDA
+
+} Intencao;
+
+Intencao interpretar(const char *frase);
+
+const char *nomeIntencao(Intencao i);
+
+#endif
+
+==================== ./cognitivo/memoria_busca.c ====================
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#include "memoria_busca.h"
+
+int buscarMemoria(
+        MemoriaEpisodica *m,
+        const char *frase,
+        char *resposta)
+{
+    char palavra[100];
+
+    if(sscanf(
+        frase,
+        "o que sabes sobre %99s",
+        palavra) != 1)
+    {
+        return 0;
+    }
+
+    palavra[
+        strcspn(
+            palavra,
+            "?\n")] = '\0';
+
+    strcpy(
+        resposta,
+        "Lembro-me de:\n");
+
+    int encontrados = 0;
+
+    for(int i = 0;
+        i < m->quantidade;
+        i++)
+    {
+        if(strstr(
+            m->lista[i].texto,
+            palavra))
+        {
+            strcat(
+                resposta,
+                "- ");
+
+            strcat(
+                resposta,
+                m->lista[i].texto);
+
+            encontrados++;
+        }
+    }
+
+    if(encontrados == 0)
+    {
+        strcpy(
+            resposta,
+            "Nao me lembro de nada sobre isso.");
+
+        return 1;
+    }
+
+    return 1;
+}
+
+==================== ./cognitivo/memoria_busca.h ====================
+#ifndef MEMORIA_BUSCA_H
+#define MEMORIA_BUSCA_H
+
+#include "../memoria/episodios.h"
+
+int buscarMemoria(
+        MemoriaEpisodica *m,
+        const char *frase,
+        char *resposta);
+
+#endif
+
+==================== ./cognitivo/motor_cognitivo.c ====================
+#include <stdio.h>
+#include <string.h>
+
+#include "motor_cognitivo.h"
+#include "decisor.h"
+#include "aprendizagem.h"
+#include "consulta.h"
+#include "aprendizagem_conhecimento.h"
+#include "consulta_conhecimento.h"
+#include "memoria_busca.h"
+#include "analisador.h"
+
+#include "../personalidade/gestor_emocional.h"
+#include "../dialogo/respostas.h"
+
+/*======================================================
+                MEMÓRIA IMEDIATA
+======================================================*/
+
+static void registrarMemoria(
+        Tsunade *t,
+        const char *frase)
+{
+    adicionarMensagem(
+            t->memoria,
+            frase);
+}
+
+/*======================================================
+                MEMÓRIA EPISÓDICA
+======================================================*/
+
+static void registrarEpisodio(
+        Tsunade *t,
+        const char *frase)
+{
+    if(strstr(frase,"o que te contei"))
+        return;
+
+    if(strstr(frase,"qual é"))
+        return;
+
+    if(strstr(frase,"qual e"))
+        return;
+
+    adicionarEpisodio(
+            t->episodios,
+            frase);
+
+    salvarEpisodios(
+            t->episodios);
+}
+
+/*======================================================
+                PERFIL
+======================================================*/
+
+static int processarPerfil(
+        Tsunade *t,
+        const char *frase,
+        char *resposta)
+{
+    if(responderConsulta(
+            t->perfil,
+            frase,
+            resposta))
+        return 1;
+
+    if(aprenderPerfil(
+            t->perfil,
+            frase,
+            resposta))
+    {
+        salvarPerfil(
+                t->perfil);
+
+        return 1;
+    }
+
+    return 0;
+}
+
+/*======================================================
+                MEMÓRIA
+======================================================*/
+
+static int processarMemoria(
+        Tsunade *t,
+        const char *frase,
+        char *resposta)
+{
+    return buscarMemoria(
+            t->episodios,
+            frase,
+            resposta);
+}
+
+/*======================================================
+                CONHECIMENTO
+======================================================*/
+
+static int processarConhecimento(
+        Tsunade *t,
+        const char *frase,
+        char *resposta)
+{
+    if(aprenderConhecimento(
+            t->conhecimento,
+            frase,
+            resposta))
+    {
+        salvarConhecimento(
+                t->conhecimento);
+
+        return 1;
+    }
+
+   printf("ANTES consultarConhecimento\n");
+
+int r = consultarConhecimento(
+            t->conhecimento,
+            frase,
+            resposta);
+
+printf("DEPOIS consultarConhecimento\n");
+
+if(r)
+{
+    return 1;
+}
+
+    return 0;
+}
+
+/*======================================================
+                EDUCAÇÃO
+======================================================*/
+
+static int processarEducacao(
+        Tsunade *t,
+        const char *frase,
+        char *resposta)
+{
+        printf("educacao recebida = %p\n", (void *)e);
+    return responderEducacao(
+            t->educacao,
+            frase,
+            resposta);
+}
+
+/*======================================================
+                DIÁLOGO
+======================================================*/
+
+static void gerarRespostaDialogo(
+        Tsunade *t,
+        const char *frase,
+        char *resposta)
+{
+    Intencao i =
+        analisarFrase(
+                t->vocabulario,
+                frase);
+
+    atualizarContexto(
+            t->contexto,
+            i,
+            frase);
+
+    strcpy(
+            resposta,
+            gerarResposta(
+                    i,
+                    t->contexto));
+}
+
+/*======================================================
+                CÉREBRO
+======================================================*/
+
+int pensar(
+        Tsunade *t,
+        const char *frase,
+        char *resposta)
+{
+    registrarMemoria(
+            t,
+            frase);
+printf("DEBUG 1\n");
+    registrarEpisodio(
+            t,
+            frase);
+printf("DEBUG 2\n");
+    if(processarPerfil(
+        t,
+        frase,
+        resposta))
+{
+    printf("DEBUG 3\n");
+    return 1;
+}
+
+if(processarMemoria(
+        t,
+        frase,
+        resposta))
+{
+    printf("DEBUG 4\n");
+    return 1;
+}
+
+if(processarConhecimento(
+        t,
+        frase,
+        resposta))
+{
+    printf("DEBUG 5\n");
+    return 1;
+}
+
+printf("ANTES EDUCACAO\n");
+int r = processarEducacao(
+        t,
+        frase,
+        resposta);
+
+printf("DEPOIS EDUCACAO\n");
+
+if(r)
+    return 1;
+
+printf("DEBUG 7\n");
+
+EventoEmocional evento =
+    decidirEventoEmocional(
+            t,
+            frase,
+            t->contexto->ultimaIntencao);
+
+printf("DEBUG 8\n");
+
+processarEventoEmocional(
+        t->emocao,
+        evento);
+
+printf("DEBUG 9\n");
+
+gerarRespostaDialogo(
+        t,
+        frase,
+        resposta);
+
+printf("DEBUG 10\n");
+return 1;
+    
+}
+==================== ./cognitivo/motor_cognitivo.h ====================
+#ifndef MOTOR_COGNITIVO_H
+#define MOTOR_COGNITIVO_H
+
+#include "../core/tsunade.h"
+
+int pensar(
+        Tsunade *t,
+        const char *frase,
+        char *resposta);
+
+#endif
+==================== ./conhecimento/conceitos.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "conceitos.h"
+
+BaseConhecimento *criarBaseConhecimento(void)
+{
+    BaseConhecimento *b =
+        malloc(sizeof(BaseConhecimento));
+
+    if(b == NULL)
+        return NULL;
+
+    b->quantidade = 0;
+
+    return b;
+}
+
+void destruirBaseConhecimento(
+        BaseConhecimento *b)
+{
+    free(b);
+}
+
+void adicionarRelacao(
+        BaseConhecimento *b,
+        const char *sujeito,
+        const char *relacao,
+        const char *objeto)
+{
+    for(int i = 0; i < b->quantidade; i++)
+    {
+        if(strcmp(
+                b->lista[i].sujeito,
+                sujeito) == 0 &&
+           strcmp(
+                b->lista[i].relacao,
+                relacao) == 0)
+        {
+            strcpy(
+                b->lista[i].objeto,
+                objeto);
+
+            return;
+        }
+    }
+
+    if(b->quantidade >= MAX_CONCEITOS)
+        return;
+
+    strcpy(
+        b->lista[b->quantidade].sujeito,
+        sujeito);
+
+    strcpy(
+        b->lista[b->quantidade].relacao,
+        relacao);
+
+    strcpy(
+        b->lista[b->quantidade].objeto,
+        objeto);
+
+    b->quantidade++;
+}
+
+void salvarConhecimento(
+        BaseConhecimento *b)
+{
+    FILE *f =
+        fopen(
+            "dados/conhecimento.dat",
+            "w");
+
+    if(f == NULL)
+        return;
+
+    for(int i = 0;
+        i < b->quantidade;
+        i++)
+    {
+        fprintf(
+            f,
+            "%s|%s|%s\n",
+            b->lista[i].sujeito,
+            b->lista[i].relacao,
+            b->lista[i].objeto);
+    }
+
+    fclose(f);
+}
+
+void carregarConhecimento(
+        BaseConhecimento *b)
+{
+    FILE *f =
+        fopen(
+            "dados/conhecimento.dat",
+            "r");
+
+    if(f == NULL)
+        return;
+
+    char linha[500];
+
+    while(fgets(
+            linha,
+            sizeof(linha),
+            f))
+    {
+        linha[
+            strcspn(
+                linha,
+                "\n")] = '\0';
+
+        char *sujeito =
+            strtok(
+                linha,
+                "|");
+
+        char *relacao =
+            strtok(
+                NULL,
+                "|");
+
+        char *objeto =
+            strtok(
+                NULL,
+                "|");
+
+        if(sujeito &&
+           relacao &&
+           objeto)
+        {
+            adicionarRelacao(
+                b,
+                sujeito,
+                relacao,
+                objeto);
+        }
+    }
+
+    fclose(f);
+}
+
+==================== ./conhecimento/conceitos.h ====================
+#ifndef CONCEITOS_H
+#define CONCEITOS_H
+
+#define MAX_CONCEITOS 500
+
+typedef struct
+{
+    char sujeito[100];
+    char relacao[100];
+    char objeto[200];
+}
+Relacao;
+
+typedef struct
+{
+    Relacao lista[MAX_CONCEITOS];
+    int quantidade;
+}
+BaseConhecimento;
+
+BaseConhecimento *criarBaseConhecimento(void);
+
+void destruirBaseConhecimento(
+        BaseConhecimento *b);
+
+void adicionarRelacao(
+        BaseConhecimento *b,
+        const char *sujeito,
+        const char *relacao,
+        const char *objeto);
+
+void salvarConhecimento(
+        BaseConhecimento *b);
+
+void carregarConhecimento(
+        BaseConhecimento *b);
+
+#endif
+
+==================== ./conhecimento/vocabulario.c ====================
+#include <stdlib.h>
+
+#include "vocabulario.h"
+
+Vocabulario *criarVocabulario(void)
+{
+    Vocabulario *v =
+        malloc(sizeof(Vocabulario));
+
+    v->trie =
+        criarTrie();
+
+    return v;
+}
+
+void destruirVocabulario(
+        Vocabulario *v)
+{
+    destruirTrie(v->trie);
+
+    free(v);
+}
+
+Intencao interpretarPalavra(
+        Vocabulario *v,
+        const char *palavra)
+{
+    return procurarPalavraTrie(
+                v->trie,
+                palavra);
+}
+
+void carregarVocabularioPadrao(
+        Vocabulario *v)
+{
+    inserirPalavraTrie(
+        v->trie,
+        "ola",
+        INTENCAO_SAUDACAO);
+
+    inserirPalavraTrie(
+    v->trie,
+    "perdi",
+    INTENCAO_EMOCIONAL);
+
+inserirPalavraTrie(
+    v->trie,
+    "brinquedo",
+    INTENCAO_EMOCIONAL);
+
+inserirPalavraTrie(
+    v->trie,
+    "chorar",
+    INTENCAO_EMOCIONAL);
+
+inserirPalavraTrie(
+    v->trie,
+    "sozinho",
+    INTENCAO_EMOCIONAL);
+
+inserirPalavraTrie(
+    v->trie,
+    "medo",
+    INTENCAO_EMOCIONAL);
+    inserirPalavraTrie(
+        v->trie,
+        "oi",
+        INTENCAO_SAUDACAO);
+
+    inserirPalavraTrie(
+        v->trie,
+        "historia",
+        INTENCAO_HISTORIA);
+
+    inserirPalavraTrie(
+        v->trie,
+        "conto",
+        INTENCAO_HISTORIA);
+
+    inserirPalavraTrie(
+        v->trie,
+        "matematica",
+        INTENCAO_ESTUDO);
+
+    inserirPalavraTrie(
+        v->trie,
+        "estudar",
+        INTENCAO_ESTUDO);
+
+    inserirPalavraTrie(
+        v->trie,
+        "jogar",
+        INTENCAO_JOGO);
+
+    inserirPalavraTrie(
+        v->trie,
+        "triste",
+        INTENCAO_EMOCIONAL);
+
+    inserirPalavraTrie(
+        v->trie,
+        "feliz",
+        INTENCAO_EMOCIONAL);
+
+    inserirPalavraTrie(
+        v->trie,
+        "ajuda",
+        INTENCAO_AJUDA);
+
+    inserirPalavraTrie(
+        v->trie,
+        "adeus",
+        INTENCAO_DESPEDIDA);
+}
+
+==================== ./conhecimento/vocabulario.h ====================
+#ifndef VOCABULARIO_H
+#define VOCABULARIO_H
+
+#include "../estruturas/trie.h"
+
+typedef struct {
+
+    Trie *trie;
+
+} Vocabulario;
+
+Vocabulario *criarVocabulario(void);
+
+void destruirVocabulario(
+        Vocabulario *v);
+
+void carregarVocabularioPadrao(
+        Vocabulario *v);
+
+Intencao interpretarPalavra(
+        Vocabulario *v,
+        const char *palavra);
+
+#endif
+
+==================== ./core/motor.c ====================
+#include <stdio.h>
+#include <string.h>
+
+#include "motor.h"
+
+#include "../cognitivo/motor_cognitivo.h"
+
+void apresentarTsunade(Tsunade *t)
+{
+    printf("\n");
+    printf("=================================\n");
+    printf("        %s\n", t->nome);
+    printf("=================================\n\n");
+
+    if(strlen(t->perfil->nome) > 0)
+    {
+        printf("Tsunade: Olá %s!\n", t->perfil->nome);
+        printf("Tsunade: Que bom ver-te novamente.\n");
+    }
+    else
+    {
+        printf("Tsunade: Olá!\n");
+        printf("Tsunade: Estou pronta para aprender contigo.\n");
+    }
+}
+
+void executarCiclo(Tsunade *t)
+{
+    char frase[256];
+    char resposta[512];
+
+    printf("\nTu: ");
+
+    if(fgets(frase, sizeof(frase), stdin) == NULL)
+        return;
+
+    pensar(
+        t,
+        frase,
+        resposta);
+
+    printf("\nTsunade: %s\n", resposta);
+}
+==================== ./core/motor.h ====================
+#ifndef MOTOR_H
+#define MOTOR_H
+
+#include "tsunade.h"
+
+void apresentarTsunade(Tsunade *t);
+
+void executarCiclo(Tsunade *t);
+
+#endif
+==================== ./core/tsunade.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "tsunade.h"
+
+Tsunade *criarTsunade(void)
+{
+    Tsunade *t = malloc(sizeof(Tsunade));
+
+    if(t == NULL)
+    {
+        printf("Erro ao criar Tsunade.\n");
+        exit(1);
+    }
+
+    strcpy(t->nome, "Tsunade-Sama");
+
+    t->ativa = 1;
+
+    /* MEMÓRIA */
+
+    t->memoria = criarMemoriaImediata();
+
+    t->episodios = criarMemoriaEpisodica();
+    carregarEpisodios(t->episodios);
+
+    t->perfil = criarPerfil();
+    carregarPerfil(t->perfil);
+
+    /* CONHECIMENTO */
+
+    t->conhecimento = criarBaseConhecimento();
+    carregarConhecimento(t->conhecimento);
+
+    t->vocabulario = criarVocabulario();
+    carregarVocabularioPadrao(t->vocabulario);
+
+    /* CONTEXTO */
+
+    t->contexto = criarContexto();
+
+    /* EMOÇÕES */
+
+    t->emocao = criarEmocoes();
+
+    /* EDUCAÇÃO */
+
+    t->educacao = criarEducacao();
+
+    if(t->educacao == NULL)
+    {
+        printf("Erro ao criar módulo de educação.\n");
+        free(t);
+        exit(1);
+    }
+
+    t->moduloPais = NULL;
+    t->moduloAdministrador = NULL;
+
+    return t;
+}
+
+void destruirTsunade(Tsunade *t)
+{
+    if(t == NULL)
+        return;
+
+    salvarPerfil(t->perfil);
+    salvarEpisodios(t->episodios);
+    salvarConhecimento(t->conhecimento);
+
+    destruirPerfil(t->perfil);
+    destruirMemoriaEpisodica(t->episodios);
+    destruirMemoriaImediata(t->memoria);
+
+    destruirBaseConhecimento(t->conhecimento);
+    destruirVocabulario(t->vocabulario);
+
+    destruirContexto(t->contexto);
+
+    destruirEmocoes(t->emocao);
+
+    destruirEducacao(t->educacao);
+
+    free(t);
+}
+==================== ./core/tsunade.h ====================
+#ifndef TSUNADE_H
+#define TSUNADE_H
+
+#include "../memoria/memoria_imediata.h"
+#include "../memoria/episodios.h"
+#include "../memoria/perfil.h"
+
+#include "../conhecimento/conceitos.h"
+#include "../conhecimento/vocabulario.h"
+
+#include "../dialogo/contexto.h"
+
+#include "../personalidade/emocoes.h"
+
+#include "../educacao/educacao.h"
+
+typedef struct Tsunade
+{
+    /* ================= IDENTIDADE ================= */
+
+    char nome[50];
+
+    int ativa;
+
+    /* ================= MEMÓRIA ================= */
+
+    MemoriaImediata *memoria;
+
+    MemoriaEpisodica *episodios;
+
+    PerfilCrianca *perfil;
+
+    /* ================= CONHECIMENTO ================= */
+
+    BaseConhecimento *conhecimento;
+
+    Vocabulario *vocabulario;
+
+    /* ================= CONTEXTO ================= */
+
+    Contexto *contexto;
+
+    /* ================= PERSONALIDADE ================= */
+
+    Emocoes *emocao;
+
+    /* ================= EDUCAÇÃO ================= */
+
+    Educacao *educacao;
+
+    /* ================= FUTUROS MÓDULOS ================= */
+
+    void *moduloPais;
+
+    void *moduloAdministrador;
+
+} Tsunade;
+
+/* Inicialização */
+
+Tsunade *criarTsunade(void);
+
+/* Encerramento */
+
+void destruirTsunade(
+        Tsunade *t);
+
+#endif
+==================== ./dialogo/contexto.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "contexto.h"
+
+Contexto *criarContexto(void)
+{
+    Contexto *c =
+        malloc(sizeof(Contexto));
+
+    c->ultimaIntencao =
+        INTENCAO_DESCONHECIDA;
+
+    c->mensagens = 0;
+
+    c->profundidadeEmocional = 0;
+
+    strcpy(c->ultimoAssunto,
+           "nenhum");
+
+    return c;
+}
+
+void destruirContexto(
+        Contexto *c)
+{
+    free(c);
+}
+
+void atualizarContexto(
+        Contexto *c,
+        Intencao i,
+        const char *frase)
+{
+    /* GestÃÂ£o da profundidade emocional */
+
+    if(i == INTENCAO_EMOCIONAL)
+    {
+        c->profundidadeEmocional++;
+    }
+    else if(i != INTENCAO_DESCONHECIDA)
+    {
+        c->profundidadeEmocional = 0;
+    }
+
+    /* SÃÂ³ atualiza a intenÃÂ§ÃÂ£o se nÃÂ£o for desconhecida */
+
+    if(i != INTENCAO_DESCONHECIDA)
+    {
+        c->ultimaIntencao = i;
+    }
+
+    strncpy(
+        c->ultimoAssunto,
+        frase,
+        sizeof(c->ultimoAssunto)-1);
+
+    c->ultimoAssunto[
+        sizeof(c->ultimoAssunto)-1]
+        = '\0';
+
+    c->mensagens++;
+}
+
+void mostrarContexto(
+        Contexto *c)
+{
+    printf("\n");
+    printf("===== CONTEXTO =====\n");
+
+    printf(
+        "Mensagens: %d\n",
+        c->mensagens);
+
+    printf(
+        "Ultimo assunto: %s\n",
+        c->ultimoAssunto);
+
+    printf("====================\n");
+}
+
+==================== ./dialogo/contexto.h ====================
+#ifndef CONTEXTO_H
+#define CONTEXTO_H
+
+#include "../cognitivo/interpretador.h"
+
+typedef struct {
+    
+    Intencao ultimaIntencao;
+
+    char ultimoAssunto[100];
+
+    int mensagens;
+    int profundidadeEmocional;
+} Contexto;
+
+Contexto *criarContexto(void);
+
+
+void destruirContexto(
+        Contexto *c);
+
+void atualizarContexto(
+        Contexto *c,
+        Intencao i,
+        const char *frase);
+
+void mostrarContexto(
+        Contexto *c);
+
+#endif
+
+==================== ./dialogo/respostas.c ====================
+#include "respostas.h"
+
+#include "respostas.h"
+
+const char *gerarResposta(
+        Intencao i,
+        Contexto *c)
+{
+    switch(i)
+    {
+        case INTENCAO_SAUDACAO:
+
+            return "Ola! Fico feliz por te ver.";
+
+        case INTENCAO_HISTORIA:
+
+            return "Era uma vez um pequeno dragao aventureiro.";
+
+        case INTENCAO_ESTUDO:
+
+            return "Vamos aprender algo novo hoje.";
+
+        case INTENCAO_JOGO:
+
+            return "Vamos brincar juntos.";
+
+        case INTENCAO_EMOCIONAL:
+
+            switch(c->profundidadeEmocional)
+            {
+                case 0:
+                    return "Estou aqui contigo. Queres contar-me mais?";
+
+                case 1:
+                    return "Entendo. Parece algo importante para ti.";
+
+                case 2:
+                    return "Deve ser dificil passar por isso. Continua, estou a ouvir.";
+
+                case 3:
+                    return "Os teus sentimentos sao importantes. Podes falar comigo.";
+
+                default:
+                    return "Obrigado por confiares em mim para falar sobre isso.";
+           }
+
+        case INTENCAO_AJUDA:
+
+            return "Claro! Vou tentar ajudar-te.";
+
+        case INTENCAO_DESPEDIDA:
+
+            return "Ate logo!";
+
+       default:
+
+        if(c->ultimaIntencao ==
+        INTENCAO_EMOCIONAL)
+        {
+            return "Entendo. Parece algo que te deixou triste. Conta-me mais.";
+        }
+
+        return "Nao compreendi muito bem. Podes explicar de outra forma?";
+    }  
+}
+
+==================== ./dialogo/respostas.h ====================
+#ifndef RESPOSTAS_H
+#define RESPOSTAS_H
+
+#include "../cognitivo/interpretador.h"
+#include "contexto.h"
+
+const char *gerarResposta(
+        Intencao i,
+        Contexto *c);
+
+#endif
+
+==================== ./educacao/educacao.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "educacao.h"
+
+Educacao *criarEducacao(void)
+{
+    Educacao *e =
+        malloc(sizeof(Educacao));
+
+    if(e == NULL)
+        return NULL;
+
+    e->licaoAtual = LICAO_NENHUMA;
+
+    e->etapa = 0;
+
+    e->pontuacao = 0;
+
+    e->ativa = 0;
+
+    return e;
+}
+
+void destruirEducacao(
+        Educacao *e)
+{
+    free(e);
+}
+
+void iniciarLicao(
+        Educacao *e,
+        TipoLicao tipo)
+{
+    e->licaoAtual = tipo;
+
+    e->etapa = 0;
+
+    e->pontuacao = 0;
+
+    e->ativa = 1;
+}
+
+int responderEducacao(
+        Educacao *e,
+        const char *frase,
+        char *resposta)
+{
+    if(e == NULL)
+        return 0;
+
+    (void)frase;
+
+    if(!e->ativa)
+        return 0;
+
+    switch(e->licaoAtual)
+    {
+        case LICAO_ANIMAIS:
+
+            if(e->etapa == 0)
+            {
+                sprintf(
+                    resposta,
+                    "Hoje vamos aprender os animais! Sabes o que é um leão?");
+
+                e->etapa++;
+
+                return 1;
+            }
+
+            if(e->etapa == 1)
+            {
+                sprintf(
+                    resposta,
+                    "Muito bem! O leão é conhecido como o rei da selva.");
+
+                e->ativa = 0;
+
+                return 1;
+            }
+
+            break;
+
+        default:
+            break;
+    }
+
+    return 0;
+}
+==================== ./educacao/educacao.h ====================
+#ifndef EDUCACAO_H
+#define EDUCACAO_H
+
+typedef enum
+{
+    LICAO_NENHUMA,
+    LICAO_ANIMAIS,
+    LICAO_CORES,
+    LICAO_NUMEROS,
+    LICAO_LETRAS,
+    LICAO_FORMAS,
+    LICAO_CIENCIAS
+
+} TipoLicao;
+
+typedef struct Educacao
+{
+    TipoLicao licaoAtual;
+
+    int etapa;
+
+    int pontuacao;
+
+    int ativa;
+
+} Educacao;
+
+Educacao *criarEducacao(void);
+
+void destruirEducacao(Educacao *e);
+
+void iniciarLicao(
+        Educacao *e,
+        TipoLicao tipo);
+
+int responderEducacao(
+        Educacao *e,
+        const char *frase,
+        char *resposta);
+
+#endif
+==================== ./estruturas/trie.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+
+#include "trie.h"
+
+static TrieNo *criarNo(void)
+{
+    TrieNo *novo =
+        malloc(sizeof(TrieNo));
+
+    if(novo == NULL)
+    {
+        printf("Erro de memÃÂ³ria.\n");
+        exit(1);
+    }
+
+    novo->fimPalavra = 0;
+    novo->intencao = INTENCAO_DESCONHECIDA;
+    for(int i = 0; i < ALFABETO; i++)
+    {
+        novo->filhos[i] = NULL;
+    }
+
+    return novo;
+
+}
+
+Trie *criarTrie(void)
+{
+    Trie *trie =
+        malloc(sizeof(Trie));
+
+    trie->raiz = criarNo();
+
+    return trie;
+}
+
+void inserirPalavraTrie(
+        Trie *trie,
+        const char *palavra,
+        Intencao intencao)
+{
+    TrieNo *atual = trie->raiz;
+
+    for(int i = 0;
+        palavra[i] != '\0';
+        i++)
+    {
+        char c = tolower(palavra[i]);
+
+        if(c < 'a' || c > 'z')
+            continue;
+
+        int indice = c - 'a';
+
+        if(atual->filhos[indice] == NULL)
+        {
+            atual->filhos[indice] =
+                criarNo();
+        }
+
+        atual =
+            atual->filhos[indice];
+    }
+
+    atual->fimPalavra = 1;
+    atual->intencao = intencao;
+}
+
+Intencao procurarPalavraTrie(
+        Trie *trie,
+        const char *palavra)
+{
+    TrieNo *atual =
+        trie->raiz;
+
+    for(int i = 0;
+        palavra[i] != '\0';
+        i++)
+    {
+        char c = tolower(palavra[i]);
+
+        if(c < 'a' || c > 'z')
+            continue;
+
+        int indice = c - 'a';
+
+        if(atual->filhos[indice] == NULL)
+        {
+            return INTENCAO_DESCONHECIDA;
+        }
+
+        atual =
+            atual->filhos[indice];
+    }
+
+    if(atual->fimPalavra)
+    {
+        return atual->intencao;
+    }
+
+    return INTENCAO_DESCONHECIDA;
+}
+
+static void destruirNos(
+        TrieNo *no)
+{
+    if(no == NULL)
+        return;
+
+    for(int i = 0;
+        i < ALFABETO;
+        i++)
+    {
+        destruirNos(
+            no->filhos[i]);
+    }
+
+    free(no);
+}
+
+void destruirTrie(
+        Trie *trie)
+{
+    destruirNos(
+        trie->raiz);
+
+    free(trie);
+}
+
+==================== ./estruturas/trie.h ====================
+#ifndef TRIE_H
+#define TRIE_H
+
+#include "../cognitivo/interpretador.h"
+
+#define ALFABETO 26
+
+typedef struct TrieNo {
+
+    struct TrieNo *filhos[ALFABETO];
+
+    int fimPalavra;
+
+    Intencao intencao;
+
+} TrieNo;
+
+typedef struct {
+
+    TrieNo *raiz;
+
+} Trie;
+
+Trie *criarTrie(void);
+
+void destruirTrie(Trie *trie);
+
+void inserirPalavraTrie(
+        Trie *trie,
+        const char *palavra,
+        Intencao intencao);
+
+Intencao procurarPalavraTrie(
+        Trie *trie,
+        const char *palavra);
+
+#endif
+
+==================== ./main.c ====================
+#include "core/tsunade.h"
+#include "core/motor.h"
+
+int main(void)
+{
+    Tsunade *t = criarTsunade();
+
+    apresentarTsunade(t);
+
+    while(t->ativa)
+    {
+        executarCiclo(t);
+    }
+
+    destruirTsunade(t);
+
+    return 0;
+}
+==================== ./memoria/episodios.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "episodios.h"
+
+MemoriaEpisodica *criarMemoriaEpisodica(void)
+{
+    MemoriaEpisodica *m =
+        malloc(sizeof(MemoriaEpisodica));
+
+    m->quantidade = 0;
+
+    return m;
+}
+
+void destruirMemoriaEpisodica(
+        MemoriaEpisodica *m)
+{
+    free(m);
+}
+
+void adicionarEpisodio(
+        MemoriaEpisodica *m,
+        const char *texto)
+{
+    if(m->quantidade >= MAX_EPISODIOS)
+        return;
+
+    strcpy(
+        m->lista[m->quantidade].texto,
+        texto);
+
+    m->quantidade++;
+}
+
+void salvarEpisodios(
+        MemoriaEpisodica *m)
+{
+    FILE *f =
+        fopen(
+            "dados/episodios.dat",
+            "w");
+
+    if(!f)
+        return;
+
+    fprintf(
+        f,
+        "%d\n",
+        m->quantidade);
+
+    for(int i = 0;
+        i < m->quantidade;
+        i++)
+    {
+        fprintf(
+            f,
+            "%s",
+            m->lista[i].texto);
+    }
+
+    fclose(f);
+}
+
+void carregarEpisodios(
+        MemoriaEpisodica *m)
+{
+    FILE *f =
+        fopen(
+            "dados/episodios.dat",
+            "r");
+
+    if(!f)
+        return;
+
+    fscanf(
+        f,
+        "%d\n",
+        &m->quantidade);
+
+    for(int i = 0;
+        i < m->quantidade;
+        i++)
+    {
+        fgets(
+            m->lista[i].texto,
+            sizeof(m->lista[i].texto),
+            f);
+    }
+
+    fclose(f);
+}
+
+==================== ./memoria/episodios.h ====================
+#ifndef EPISODIOS_H
+#define EPISODIOS_H
+
+#define MAX_EPISODIOS 100
+
+typedef struct
+{
+    char texto[256];
+}
+Episodio;
+
+typedef struct
+{
+    Episodio lista[MAX_EPISODIOS];
+    int quantidade;
+}
+MemoriaEpisodica;
+
+MemoriaEpisodica *criarMemoriaEpisodica(void);
+
+void destruirMemoriaEpisodica(
+        MemoriaEpisodica *m);
+
+void adicionarEpisodio(
+        MemoriaEpisodica *m,
+        const char *texto);
+
+void salvarEpisodios(
+        MemoriaEpisodica *m);
+
+void carregarEpisodios(
+        MemoriaEpisodica *m);
+
+#endif
+
+==================== ./memoria/memoria_imediata.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "memoria_imediata.h"
+
+MemoriaImediata *criarMemoriaImediata(void)
+{
+    MemoriaImediata *m = malloc(sizeof(MemoriaImediata));
+
+    if(m == NULL)
+    {
+        printf("Erro ao criar memÃÂ³ria.\n");
+        exit(1);
+    }
+
+    m->inicio = 0;
+    m->fim = 0;
+    m->total = 0;
+
+    return m;
+}
+
+void destruirMemoriaImediata(MemoriaImediata *m)
+{
+    if(m != NULL)
+        free(m);
+}
+
+void adicionarMensagem(MemoriaImediata *m, const char *msg)
+{
+    if(m == NULL)
+        return;
+
+    strncpy(
+        m->mensagens[m->fim],
+        msg,
+        TAM_MSG - 1
+    );
+
+    m->mensagens[m->fim][TAM_MSG - 1] = '\0';
+
+    m->fim = (m->fim + 1) % TAM_MEMORIA;
+
+    if(m->total < TAM_MEMORIA)
+    {
+        m->total++;
+    }
+    else
+    {
+        m->inicio =
+            (m->inicio + 1) % TAM_MEMORIA;
+    }
+}
+
+void mostrarMemoriaImediata(MemoriaImediata *m)
+{
+    if(m == NULL)
+        return;
+
+    printf("\n");
+    printf("=== MEMORIA IMEDIATA ===\n");
+
+    int pos = m->inicio;
+
+    for(int i = 0; i < m->total; i++)
+    {
+        printf("%d. %s\n",
+               i + 1,
+               m->mensagens[pos]);
+
+        pos =
+            (pos + 1) % TAM_MEMORIA;
+    }
+
+    printf("========================\n");
+}
+
+==================== ./memoria/memoria_imediata.h ====================
+#ifndef MEMORIA_IMEDIATA_H
+#define MEMORIA_IMEDIATA_H
+
+#define TAM_MEMORIA 10
+#define TAM_MSG 256
+
+typedef struct {
+
+    char mensagens[TAM_MEMORIA][TAM_MSG];
+
+    int inicio;
+
+    int fim;
+
+    int total;
+
+} MemoriaImediata;
+
+
+/* CriaÃÂ§ÃÂ£o */
+
+MemoriaImediata *criarMemoriaImediata(void);
+
+/* LibertaÃÂ§ÃÂ£o */
+
+void destruirMemoriaImediata(MemoriaImediata *m);
+
+/* Adicionar mensagem */
+
+void adicionarMensagem(MemoriaImediata *m, const char *msg);
+
+/* Mostrar memÃÂ³ria */
+
+void mostrarMemoriaImediata(MemoriaImediata *m);
+
+#endif
+
+==================== ./memoria/perfil.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "perfil.h"
+
+PerfilCrianca *criarPerfil(void)
+{
+    PerfilCrianca *p =
+        malloc(sizeof(PerfilCrianca));
+
+    strcpy(p->nome, "");
+
+    p->idade = 0;
+
+    strcpy(p->corFavorita, "");
+    strcpy(p->animalFavorito, "");
+    strcpy(p->comidaFavorita, "");
+
+    p->totalConversas = 0;
+
+    return p;
+}
+
+void destruirPerfil(
+        PerfilCrianca *p)
+{
+    free(p);
+}
+
+void salvarPerfil(
+        PerfilCrianca *p)
+{
+    FILE *f =
+        fopen(
+            "dados/perfil.dat",
+            "w");
+
+    if(f == NULL)
+        return;
+
+    fprintf(
+        f,
+        "%s\n%d\n%s\n%s\n%s\n%d\n",
+        p->nome,
+        p->idade,
+        p->corFavorita,
+        p->animalFavorito,
+        p->comidaFavorita,
+        p->totalConversas);
+
+    fclose(f);
+}
+
+void carregarPerfil(
+        PerfilCrianca *p)
+{
+    FILE *f =
+        fopen(
+            "dados/perfil.dat",
+            "r");
+
+    if(f == NULL)
+        return;
+
+    fgets(
+        p->nome,
+        sizeof(p->nome),
+        f);
+
+    p->nome[
+        strcspn(
+            p->nome,
+            "\n")] = '\0';
+
+    fscanf(
+        f,
+        "%d\n",
+        &p->idade);
+
+    fgets(
+        p->corFavorita,
+        sizeof(p->corFavorita),
+        f);
+
+    p->corFavorita[
+        strcspn(
+            p->corFavorita,
+            "\n")] = '\0';
+
+    fgets(
+        p->animalFavorito,
+        sizeof(p->animalFavorito),
+        f);
+
+    p->animalFavorito[
+        strcspn(
+            p->animalFavorito,
+            "\n")] = '\0';
+
+    fgets(
+        p->comidaFavorita,
+        sizeof(p->comidaFavorita),
+        f);
+
+    p->comidaFavorita[
+        strcspn(
+            p->comidaFavorita,
+            "\n")] = '\0';
+
+    fscanf(
+        f,
+        "%d",
+        &p->totalConversas);
+
+    fclose(f);
+}
+
+==================== ./memoria/perfil.h ====================
+#ifndef PERFIL_H
+#define PERFIL_H
+
+typedef struct {
+
+    char nome[50];
+
+    int idade;
+
+    char corFavorita[50];
+
+    char animalFavorito[50];
+
+    char comidaFavorita[50];
+
+    int totalConversas;
+
+} PerfilCrianca;
+
+PerfilCrianca *criarPerfil(void);
+
+void destruirPerfil(
+        PerfilCrianca *p);
+
+void salvarPerfil(
+        PerfilCrianca *p);
+
+void carregarPerfil(
+        PerfilCrianca *p);
+
+#endif
+
+==================== ./personalidade/emocoes.c ====================
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "emocoes.h"
+
+Emocoes *criarEmocoes(void)
+{
+    Emocoes *e =
+        malloc(sizeof(Emocoes));
+
+    if(e==NULL)
+    {
+        printf("Erro ao criar emoções.\n");
+        exit(1);
+    }
+
+    e->estado = FELIZ;
+
+    e->energia = 100;
+
+    e->curiosidade = 80;
+
+    e->empatia = 90;
+
+    e->grafo =
+        criarGrafoEmocoes();
+
+    return e;
+}
+
+void destruirEmocoes(
+        Emocoes *e)
+{
+    if(e==NULL)
+        return;
+
+    destruirGrafoEmocoes(
+            e->grafo);
+
+    free(e);
+}
+
+void mudarEstado(
+        Emocoes *e,
+        EstadoEmocional novo)
+{
+    if(e==NULL)
+        return;
+
+    e->estado=novo;
+}
+
+void avancarEmocao(
+        Emocoes *e,
+        int escolha)
+{
+    if(e==NULL)
+        return;
+
+    e->estado =
+        proximoEstado(
+                e->grafo,
+                e->estado,
+                escolha);
+}
+
+const char *nomeEstado(
+        EstadoEmocional estado)
+{
+    switch(estado)
+    {
+        case FELIZ:
+
+            return "Feliz";
+
+        case CURIOSA:
+
+            return "Curiosa";
+
+        case BRINCALHONA:
+
+            return "Brincalhona";
+
+        case ORGULHOSA:
+
+            return "Orgulhosa";
+
+        case PREOCUPADA:
+
+            return "Preocupada";
+
+        default:
+
+            return "Desconhecido";
+    }
+}
+
+void mostrarEmocoes(
+        Emocoes *e)
+{
+    if(e==NULL)
+        return;
+
+    printf("\n");
+
+    printf("========== EMOÇÕES ==========\n");
+
+    printf("Estado       : %s\n",
+           nomeEstado(e->estado));
+
+    printf("Energia      : %d\n",
+           e->energia);
+
+    printf("Curiosidade  : %d\n",
+           e->curiosidade);
+
+    printf("Empatia      : %d\n",
+           e->empatia);
+
+    printf("=============================\n");
+}
+==================== ./personalidade/emocoes.h ====================
+#ifndef EMOCOES_H
+#define EMOCOES_H
+
+#include "estado_emocional.h"
+#include "grafo_emocoes.h"
+
+typedef struct
+{
+    EstadoEmocional estado;
+
+    GrafoEmocoes *grafo;
+
+    int energia;
+    int curiosidade;
+    int empatia;
+
+} Emocoes;
+
+Emocoes *criarEmocoes(void);
+
+void destruirEmocoes(
+        Emocoes *e);
+
+void mudarEstado(
+        Emocoes *e,
+        EstadoEmocional novo);
+
+void avancarEmocao(
+        Emocoes *e,
+        int escolha);
+
+void mostrarEmocoes(
+        Emocoes *e);
+
+const char *nomeEstado(
+        EstadoEmocional estado);
+
+#endif
+==================== ./personalidade/estado_emocional.h ====================
+#ifndef ESTADO_EMOCIONAL_H
+#define ESTADO_EMOCIONAL_H
+
+typedef enum
+{
+    FELIZ,
+
+    CURIOSA,
+
+    BRINCALHONA,
+
+    ORGULHOSA,
+
+    PREOCUPADA
+
+} EstadoEmocional;
+
+#endif
+==================== ./personalidade/gestor_emocional.c ====================
+#include "gestor_emocional.h"
+#include <stddef.h>
+
+void processarEventoEmocional(
+        Emocoes *e,
+        EventoEmocional evento)
+{
+    if(e == NULL)
+        return;
+
+    switch(evento)
+    {
+        case EVENTO_APRENDEU:
+
+            avancarEmocao(
+                    e,
+                    ORGULHOSA);
+            break;
+
+        case EVENTO_PERGUNTA:
+
+            avancarEmocao(
+                    e,
+                    CURIOSA);
+            break;
+
+        case EVENTO_BRINCADEIRA:
+
+            avancarEmocao(
+                    e,
+                    BRINCALHONA);
+            break;
+
+        case EVENTO_ERRO:
+
+            avancarEmocao(
+                    e,
+                    PREOCUPADA);
+            break;
+
+        case EVENTO_ELOGIO:
+
+            avancarEmocao(
+                    e,
+                    FELIZ);
+            break;
+
+        default:
+
+            avancarEmocao(
+                    e,
+                    FELIZ);
+            break;
+    }
+}
+==================== ./personalidade/gestor_emocional.h ====================
+#ifndef GESTOR_EMOCIONAL_H
+#define GESTOR_EMOCIONAL_H
+
+#include "emocoes.h"
+
+typedef enum
+{
+    EVENTO_NEUTRO,
+
+    EVENTO_APRENDEU,
+
+    EVENTO_PERGUNTA,
+
+    EVENTO_BRINCADEIRA,
+
+    EVENTO_ERRO,
+
+    EVENTO_ELOGIO
+
+} EventoEmocional;
+
+void processarEventoEmocional(
+        Emocoes *e,
+        EventoEmocional evento);
+
+#endif
+==================== ./personalidade/grafo_emocoes.c ====================
+#include <stdlib.h>
+
+#include "grafo_emocoes.h"
+
+static NoEmocional *buscarNo(
+        GrafoEmocoes *g,
+        EstadoEmocional estado)
+{
+    for(int i=0;i<g->quantidade;i++)
+    {
+        if(g->nos[i].estado==estado)
+            return &g->nos[i];
+    }
+
+    return NULL;
+}
+
+GrafoEmocoes *criarGrafoEmocoes(void)
+{
+    GrafoEmocoes *g =
+        malloc(sizeof(GrafoEmocoes));
+
+    if(g==NULL)
+        return NULL;
+
+    g->quantidade=0;
+
+    construirGrafoPadrao(g);
+
+    return g;
+}
+
+void destruirGrafoEmocoes(
+        GrafoEmocoes *g)
+{
+    free(g);
+}
+
+void adicionarLigacao(
+        GrafoEmocoes *g,
+        EstadoEmocional origem,
+        EstadoEmocional destino,
+        int peso)
+{
+    NoEmocional *no =
+        buscarNo(g, origem);
+
+    if(no==NULL)
+    {
+        no=&g->nos[g->quantidade++];
+
+        no->estado=origem;
+
+        no->quantidade=0;
+    }
+
+    no->vizinhos[no->quantidade].destino=destino;
+    no->vizinhos[no->quantidade].peso=peso;
+
+    no->quantidade++;
+}
+
+EstadoEmocional proximoEstado(
+        GrafoEmocoes *g,
+        EstadoEmocional atual,
+        int indice)
+{
+    NoEmocional *no =
+        buscarNo(g, atual);
+
+    if(no==NULL)
+        return atual;
+
+    if(indice>=no->quantidade)
+        return atual;
+
+    return no->vizinhos[indice].destino;
+}
+
+void construirGrafoPadrao(
+        GrafoEmocoes *g)
+{
+    adicionarLigacao(g,FELIZ,CURIOSA,5);
+    adicionarLigacao(g,FELIZ,ORGULHOSA,3);
+
+    adicionarLigacao(g,CURIOSA,FELIZ,4);
+    adicionarLigacao(g,CURIOSA,BRINCALHONA,5);
+
+    adicionarLigacao(g,BRINCALHONA,FELIZ,5);
+
+    adicionarLigacao(g,PREOCUPADA,FELIZ,2);
+
+    adicionarLigacao(g,ORGULHOSA,FELIZ,4);
+}
+==================== ./personalidade/grafo_emocoes.h ====================
+#ifndef GRAFO_EMOCOES_H
+#define GRAFO_EMOCOES_H
+
+#include "estado_emocional.h"
+
+#define MAX_ESTADOS 10
+
+typedef struct
+{
+    EstadoEmocional destino;
+
+    int peso;
+
+} LigacaoEmocional;
+
+typedef struct
+{
+    EstadoEmocional estado;
+
+    LigacaoEmocional vizinhos[10];
+
+    int quantidade;
+
+} NoEmocional;
+
+typedef struct
+{
+    NoEmocional nos[MAX_ESTADOS];
+
+    int quantidade;
+
+} GrafoEmocoes;
+
+GrafoEmocoes *criarGrafoEmocoes(void);
+
+void destruirGrafoEmocoes(
+        GrafoEmocoes *g);
+
+void adicionarLigacao(
+        GrafoEmocoes *g,
+        EstadoEmocional origem,
+        EstadoEmocional destino,
+        int peso);
+
+EstadoEmocional proximoEstado(
+        GrafoEmocoes *g,
+        EstadoEmocional atual,
+        int indice);
+
+void construirGrafoPadrao(
+        GrafoEmocoes *g);
+
+#endif
