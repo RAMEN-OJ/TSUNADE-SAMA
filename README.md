@@ -1,6 +1,6 @@
  Tsunade-Sama: Sistema Virtual de Robô Babá e Professora Infantil
 
-<p align="center">
+<p align="right">
   <b>Disciplina: Estruturas de Dados</b><br>
   <b>Linguagem: C</b><br>
   <b>Autor: Grupo 10</b><br>
