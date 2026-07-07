@@ -29,7 +29,7 @@ O projeto foi modularizado utilizando as seguintes estruturas de dados complexas
   <tbody>
     <tr>
       <td style="font-weight: bold; padding: 10px;">Heap Máxima</td>
-      <td style="padding: 10px;"><b>Escolha da melhor ação:</b> Responsável por processar a lista de possibilidades geradas e extrair instantaneamente (O(1)) o evento de maior prioridade a ser executado pelo robô.</td>
+      <td style="padding: 10px;"><b>Escolha da melhor ação:</b> Responsável por processar a lista de possibilidades geradas e extrair instantaneamente O(1) o evento de maior prioridade a ser executado pelo robô.</td>
     </tr>
     <tr style="background-color: #f9f9f9;">
       <td style="font-weight: bold; padding: 10px;">BST (Binary Search Tree)</td>
@@ -41,7 +41,7 @@ O projeto foi modularizado utilizando as seguintes estruturas de dados complexas
     </tr>
     <tr style="background-color: #f9f9f9;">
       <td style="font-weight: bold; padding: 10px;">Hash Table</td>
-      <td style="padding: 10px;"><b>Perfil da criança:</b> Cache e dicionário para armazenamento de dados sensíveis e fixos do perfil (nome, idade, restrições médicas/alergias e permissões) com busca em tempo constante médio $O(1)$.</td>
+      <td style="padding: 10px;"><b>Perfil da criança:</b> Cache e dicionário para armazenamento de dados sensíveis e fixos do perfil (nome, idade, restrições médicas/alergias e permissões) com busca em tempo constante médio O(1).</td>
     </tr>
     <tr>
       <td style="font-weight: bold; padding: 10px;">Árvore Trie</td>
