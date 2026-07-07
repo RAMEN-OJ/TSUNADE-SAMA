@@ -16,8 +16,7 @@ void paraMinusculas(char *dest, const char *orig)
     dest[i] = '\0';
 }
 
-static int contem(const char *texto,
-                  const char *palavra)
+static int contem(const char *texto, const char *palavra)
 {
     return strstr(texto, palavra) != NULL;
 }
@@ -28,8 +27,7 @@ Intencao interpretar(const char *frase)
 
     paraMinusculas(texto, frase);
 
-    if(contem(texto, "ola") ||
-       contem(texto, "oi"))
+    if(contem(texto, "ola") || contem(texto, "oi"))  
     {
         return INTENCAO_SAUDACAO;
     }
@@ -39,20 +37,17 @@ Intencao interpretar(const char *frase)
         return INTENCAO_HISTORIA;
     }
 
-    if(contem(texto, "matematica") ||
-       contem(texto, "estudar"))
+    if(contem(texto, "matematica") || contem(texto, "estudar")) 
     {
         return INTENCAO_ESTUDO;
     }
 
-    if(contem(texto, "jogo") ||
-       contem(texto, "jogar"))
+    if(contem(texto, "jogo") || contem(texto, "jogar"))  
     {
         return INTENCAO_JOGO;
     }
 
-    if(contem(texto, "triste") ||
-       contem(texto, "feliz"))
+    if(contem(texto, "triste") || contem(texto, "feliz")) 
     {
         return INTENCAO_EMOCIONAL;
     }
@@ -62,8 +57,7 @@ Intencao interpretar(const char *frase)
         return INTENCAO_AJUDA;
     }
 
-    if(contem(texto, "adeus") ||
-       contem(texto, "tchau"))
+    if(contem(texto, "adeus") || contem(texto, "tchau"))    
     {
         return INTENCAO_DESPEDIDA;
     }

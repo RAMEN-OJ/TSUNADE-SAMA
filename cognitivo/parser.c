@@ -1,3 +1,9 @@
+/*======================================================================
+  parser.c
+  Analisador sintático de frases em português.
+  Tokeniza texto e classifica em tipos de ação (perfil, consulta, conhecimento, etc.).
+======================================================================*/
+
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,28 +11,21 @@
 #include "interpretacao.h"
 #include "parser.h"
 
-/*=========================================
-    ESTRUTURA PRIVADA DO PARSER
-=========================================*/
-
+/* --- estrutura interna do parser --- */
 #define MAX_TOKENS 20
 #define MAX_TOKEN 50
 
 typedef struct
 {
     char palavras[MAX_TOKENS][MAX_TOKEN];
-
     int quantidade;
 
 } Parser;
 
-static void classificar(
-        Parser *p,
-        Interpretacao *i);
-        
-static void analisarTexto(
-        const char *frase,
-        Parser *p)
+static void classificar(Parser *p, Interpretacao *i);
+
+/* Tokeniza frase em palavras minúsculas, ignorando pontuação; parâmetros: frase, p (saída) */
+static void analisarTexto(const char *frase, Parser *p)
 {
     p->quantidade = 0;
 
@@ -35,6 +34,7 @@ static void analisarTexto(
 
     while(frase[i] != '\0')
     {
+        /* --- ignorar espaços --- */
         while(frase[i] == ' ' ||
               frase[i] == '\n' ||
               frase[i] == '\t')
@@ -47,6 +47,7 @@ static void analisarTexto(
 
         j = 0;
 
+        /* --- extrair token --- */
         while(frase[i] != '\0' &&
               frase[i] != ' ' &&
               frase[i] != '\n' &&
@@ -63,27 +64,24 @@ static void analisarTexto(
         }
 
         p->palavras[p->quantidade][j] = '\0';
-
         p->quantidade++;
 
         if(p->quantidade >= MAX_TOKENS)
             break;
     }
 }
-void interpretarFrase(
-        const char *frase,
-        Interpretacao *inter)
+
+/* Analisa frase completa: tokeniza e classifica; preenche inter com tipo e entidades */
+void interpretarFrase(const char *frase, Interpretacao *inter)      
 {
     Parser p;
 
     analisarTexto(frase, &p);
-
     classificar(&p, inter);
 }
 
-static void classificar(
-        Parser *p,
-        Interpretacao *i)
+/* Classifica tokens numa Interpretacao com sujeito, relação e objeto; parâmetros: p, i (saída) */
+static void classificar(Parser *p, Interpretacao *i)        
 {
     memset(i,0,sizeof(*i));
 
@@ -92,10 +90,7 @@ static void classificar(
     if(p->quantidade==0)
         return;
 
-    /*======================
-        SAUDAÇÃO
-    ======================*/
-
+    /* --- saudação --- */
     if(strcmp(p->palavras[0],"ola")==0 ||
        strcmp(p->palavras[0],"olá")==0 ||
        strcmp(p->palavras[0],"oi")==0)
@@ -104,10 +99,7 @@ static void classificar(
         return;
     }
 
-    /*======================
-        PERFIL
-    ======================*/
-
+    /* --- perfil (nome) --- */
     if(p->quantidade>=4)
     {
         if(strcmp(p->palavras[0],"meu")==0 &&
@@ -130,10 +122,7 @@ static void classificar(
         }
     }
 
-    /*======================
-        CONSULTAS
-    ======================*/
-
+    /* --- consultas diretas --- */
     if(strcmp(p->palavras[0],"quem")==0 ||
        strcmp(p->palavras[0],"qual")==0 ||
        strcmp(p->palavras[0],"onde")==0 ||
@@ -143,39 +132,46 @@ static void classificar(
         return;
     }
 
-    /* o que sabes sobre */
-
-if(p->quantidade >= 5)
-{
-    if(strcmp(p->palavras[0],"o")==0 &&
-       strcmp(p->palavras[1],"que")==0 &&
-       strcmp(p->palavras[2],"sabes")==0 &&
-       strcmp(p->palavras[3],"sobre")==0)
+    /* --- inferência (fala/conta sobre) --- */
+    if(p->quantidade >= 4)
     {
-        i->tipo = ACAO_INFERENCIA;
+        if((strcmp(p->palavras[0],"o")==0 && strcmp(p->palavras[1],"que")==0 &&
+            strcmp(p->palavras[2],"sabes")==0 && strcmp(p->palavras[3],"sobre")==0) ||
+           (strcmp(p->palavras[0],"fala")==0 && strcmp(p->palavras[1],"sobre")==0) ||
+           (strcmp(p->palavras[0],"fala-me")==0 && strcmp(p->palavras[1],"sobre")==0) ||
+           (strcmp(p->palavras[0],"conta-me")==0 && strcmp(p->palavras[1],"sobre")==0) ||
+           (strcmp(p->palavras[0],"conta")==0 && strcmp(p->palavras[1],"sobre")==0))
+        {
+            int inicio = 4;
+            int k;
 
-        strcpy(
-            i->objeto,
-            p->palavras[4]);
+            if(strcmp(p->palavras[0],"fala")==0 || strcmp(p->palavras[0],"conta")==0 ||
+               strcmp(p->palavras[0],"fala-me")==0 || strcmp(p->palavras[0],"conta-me")==0)
+                inicio = 2;
 
-        return;
+            i->tipo = ACAO_INFERENCIA;
+            i->objeto[0] = '\0';
+
+            for(k = inicio; k < p->quantidade; k++)
+            {
+                if(k != inicio)
+                    strcat(i->objeto, " ");
+                strcat(i->objeto, p->palavras[k]);
+            }
+
+            return;
+        }
     }
-}
-    /*======================
-        CONHECIMENTO
-    ======================*/
 
+    /* --- conhecimento (sujeito é/foi/tem objeto) --- */
     for(int k=1;k<p->quantidade;k++)
     {
-        if(strcmp(p->palavras[k],"é")==0 ||
-           strcmp(p->palavras[k],"e")==0 ||
-           strcmp(p->palavras[k],"fica")==0 ||
-           strcmp(p->palavras[k],"tem")==0)
+        if(strcmp(p->palavras[k],"é")==0 || strcmp(p->palavras[k],"e")==0 ||
+           strcmp(p->palavras[k],"fica")==0 || strcmp(p->palavras[k],"tem")==0) 
         {
             i->tipo=ACAO_CONHECIMENTO;
 
             strcpy(i->sujeito,p->palavras[0]);
-
             strcpy(i->relacao,p->palavras[k]);
 
             i->objeto[0]='\0';
@@ -192,23 +188,15 @@ if(p->quantidade >= 5)
         }
     }
 
-    /*======================
-        MEMÓRIA
-    ======================*/
-
-    if(strcmp(p->palavras[0],"lembra")==0 ||
-       strcmp(p->palavras[0],"aprendi")==0)
+    /* --- memória --- */
+    if(strcmp(p->palavras[0],"lembra")==0 || strcmp(p->palavras[0],"aprendi")==0) 
     {
         i->tipo=ACAO_MEMORIA;
         return;
     }
 
-    /*======================
-        ESTUDO
-    ======================*/
-
-    if(strcmp(p->palavras[0],"quanto")==0 ||
-       strcmp(p->palavras[0],"calcula")==0)
+    /* --- estudo --- */
+    if(strcmp(p->palavras[0],"quanto")==0 || strcmp(p->palavras[0],"calcula")==0) 
     {
         i->tipo=ACAO_ESTUDO;
         return;

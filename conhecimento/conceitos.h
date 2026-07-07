@@ -1,3 +1,10 @@
+/* ==========================================================================
+ * conceitos.h — Base de conhecimento semântico
+ *
+ * Define estruturas de relações, nós do grafo semântico e a API pública
+ * para criar, consultar e persistir conhecimento factual.
+ * ========================================================================== */
+
 #ifndef CONCEITOS_H
 #define CONCEITOS_H
 
@@ -5,6 +12,7 @@
 
 #define MAX_CONCEITOS 500
 
+/** Tripla sujeito-relação-objeto armazenada na lista plana da base. */
 typedef struct
 {
     char sujeito[100];
@@ -14,8 +22,9 @@ typedef struct
 } Relacao;
 
 
-/* ---------- GRAFO ---------- */
+/* ---------- Estruturas do grafo semântico ---------- */
 
+/** Aresta rotulada que liga um conceito a outro no grafo. */
 typedef struct Vizinho
 {
     char relacao[100];
@@ -27,6 +36,7 @@ typedef struct Vizinho
 } Vizinho;
 
 
+/** Nó do grafo com lista de adjacências e encadeamento global. */
 typedef struct NoSemantico
 {
     char conceito[100];
@@ -38,8 +48,9 @@ typedef struct NoSemantico
 } NoSemantico;
 
 
-/* ---------- BASE ---------- */
+/* ---------- Base de conhecimento ---------- */
 
+/** Agrega lista de relações, índice hash e cabeça do grafo semântico. */
 typedef struct
 {
     Relacao lista[MAX_CONCEITOS];
@@ -52,33 +63,28 @@ typedef struct
 
 } BaseConhecimento;
 
-
+/** Cria uma base de conhecimento vazia. */
 BaseConhecimento *criarBaseConhecimento(void);
 
-void imprimirGrafo(
-        BaseConhecimento *b);
-        
-    NoSemantico *procurarNoSemantico(
-        BaseConhecimento *,
-        const char *);
+/** Imprime o grafo semântico no ecrã. */
+void imprimirGrafo(BaseConhecimento *b);
 
-void destruirBaseConhecimento(
-        BaseConhecimento *b);
+/** Procura um nó semântico pelo nome do conceito. */
+NoSemantico *procurarNoSemantico(BaseConhecimento *, const char *);
 
-void adicionarRelacao(
-        BaseConhecimento *b,
-        const char *sujeito,
-        const char *relacao,
-        const char *objeto);
+/** Liberta recursos da base de conhecimento. */
+void destruirBaseConhecimento( BaseConhecimento *b);
 
-Relacao *procurarRelacao(
-        BaseConhecimento *b,
-        const char *sujeito);
+/** Adiciona ou actualiza uma relação semântica. */
+void adicionarRelacao(BaseConhecimento *b, const char *sujeito, const char *relacao, const char *objeto);
 
-void salvarConhecimento(
-        BaseConhecimento *b);
+/** Procura a primeira relação associada a um sujeito. */
+Relacao *procurarRelacao(BaseConhecimento *b, const char *sujeito);
 
-void carregarConhecimento(
-        BaseConhecimento *b);
+/** Grava a base de conhecimento em disco. */
+void salvarConhecimento(BaseConhecimento *b);
+
+/** Carrega a base de conhecimento a partir de disco. */
+void carregarConhecimento(BaseConhecimento *b);
 
 #endif

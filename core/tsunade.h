@@ -1,3 +1,9 @@
+/*======================================================================
+  tsunade.h
+  Definição da estrutura central Tsunade e funções de ciclo de vida.
+  Agrega memória, conhecimento, contexto, emoções e educação.
+======================================================================*/
+
 #ifndef TSUNADE_H
 #define TSUNADE_H
 
@@ -14,55 +20,41 @@
 
 #include "../educacao/educacao.h"
 
+/* --- estrutura principal --- */
 typedef struct Tsunade
 {
-    /* ================= IDENTIDADE ================= */
-
+    /* --- identidade --- */
     char nome[50];
-
     int ativa;
 
-    /* ================= MEMÓRIA ================= */
-
+    /* --- memória --- */
     MemoriaImediata *memoria;
-
     MemoriaEpisodica *episodios;
-
     PerfilCrianca *perfil;
 
-    /* ================= CONHECIMENTO ================= */
-
+    /* --- conhecimento --- */
     BaseConhecimento *conhecimento;
-
     Vocabulario *vocabulario;
 
-    /* ================= CONTEXTO ================= */
-
+    /* --- contexto --- */
     Contexto *contexto;
 
-    /* ================= PERSONALIDADE ================= */
-
+    /* --- personalidade --- */
     Emocoes *emocao;
 
-    /* ================= EDUCAÇÃO ================= */
-
+    /* --- educação --- */
     Educacao *educacao;
 
-    /* ================= FUTUROS MÓDULOS ================= */
-
+    /* --- módulos futuros --- */
     void *moduloPais;
-
     void *moduloAdministrador;
 
 } Tsunade;
 
-/* Inicialização */
-
+/* Aloca e inicializa todos os submódulos da Tsunade; retorna ponteiro ou termina em erro */
 Tsunade *criarTsunade(void);
 
-/* Encerramento */
-
-void destruirTsunade(
-        Tsunade *t);
-
+/* Persiste dados, liberta recursos e destrói a instância; parâmetro: t (pode ser NULL) */
+void destruirTsunade(Tsunade *t);
+        
 #endif
