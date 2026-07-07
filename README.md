@@ -37,7 +37,7 @@ O projeto foi modularizado utilizando as seguintes estruturas de dados complexas
     </tr>
     <tr>
       <td style="font-weight: bold; padding: 10px;">Árvore AVL</td>
-      <td style="padding: 10px;"><b>Histórico escolar:</b> Armazenamento indexado temporalmente e balanceado dos logs de atividades e evolução do aprendizado da criança, mantendo operações em complexidade logarítmica ($O(\log n)$).</td>
+      <td style="padding: 10px;"><b>Histórico escolar:</b> Armazenamento indexado temporalmente e balanceado dos logs de atividades e evolução do aprendizado da criança, mantendo operações em complexidade logarítmica.</td>
     </tr>
     <tr style="background-color: #f9f9f9;">
       <td style="font-weight: bold; padding: 10px;">Hash Table</td>
