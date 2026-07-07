@@ -130,3 +130,50 @@ int responderConsulta(
 
     return 0;
 }
+
+
+int consultarConhecimento(
+        BaseConhecimento *base,
+        const char *conceito,
+        char *resposta)
+{
+    resposta[0]='\0';
+
+    NoSemantico *no =
+        procurarNoSemantico(
+                base,
+                conceito);
+
+    if(no==NULL)
+        return 0;
+
+    strcat(resposta,"Sei que:\n");
+
+    Vizinho *v=no->adjacentes;
+
+    while(v)
+    {
+        strcat(resposta,"- ");
+        strcat(resposta,no->conceito);
+        strcat(resposta," ");
+        strcat(resposta,v->relacao);
+        strcat(resposta," ");
+        strcat(resposta,v->destino);
+        strcat(resposta,"\n");
+
+        v=v->proximo;
+    }
+
+    return 1;
+}
+
+int responderConsultaSemantica(
+        BaseConhecimento *b,
+        const char *conceito,
+        char *resposta)
+{
+    return consultarConhecimento(
+            b,
+            conceito,
+            resposta);
+}

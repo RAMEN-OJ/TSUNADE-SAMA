@@ -4,6 +4,7 @@ CFLAGS = -Wall -Wextra -std=c11 -g
 
 SRC = \
 main.c \
+admin/admin.c \
 core/tsunade.c \
 core/motor.c \
 \
@@ -11,17 +12,20 @@ conhecimento/vocabulario.c \
 conhecimento/conceitos.c \
 \
 estruturas/trie.c \
+estruturas/hash.c \
 \
+cognitivo/parser.c \
+cognitivo/interpretacao.c \
+cognitivo/executor.c \
 cognitivo/decisor.c \
 cognitivo/interpretador.c \
 cognitivo/analisador.c \
 cognitivo/aprendizagem.c \
 cognitivo/consulta.c \
-cognitivo/aprendizagem_conhecimento.c \
-cognitivo/consulta_conhecimento.c \
 cognitivo/memoria_busca.c \
 cognitivo/inferencia.c \
 cognitivo/motor_cognitivo.c \
+cognitivo/bfs_semantico.c \
 \
 educacao/educacao.c \
 \

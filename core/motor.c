@@ -1,8 +1,8 @@
 #include <stdio.h>
-#include <string.h>
 
 #include "motor.h"
 
+#include "../admin/admin.h"
 #include "../cognitivo/motor_cognitivo.h"
 
 void apresentarTsunade(Tsunade *t)
@@ -33,6 +33,14 @@ void executarCiclo(Tsunade *t)
 
     if(fgets(frase, sizeof(frase), stdin) == NULL)
         return;
+
+    frase[strcspn(frase, "\n")] = '\0';
+
+    if(strcmp(frase, "admin") == 0)
+    {
+        painelAdministrador(t);
+        return;
+    }
 
     pensar(
         t,

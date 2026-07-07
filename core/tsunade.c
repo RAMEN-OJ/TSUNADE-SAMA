@@ -47,7 +47,7 @@ Tsunade *criarTsunade(void)
     /* EDUCAÇÃO */
 
     t->educacao = criarEducacao();
-
+printf("educacao criada = %p\n", (void *)t->educacao);
     if(t->educacao == NULL)
     {
         printf("Erro ao criar módulo de educação.\n");

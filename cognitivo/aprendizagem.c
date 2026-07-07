@@ -3,6 +3,7 @@
 #include <ctype.h>
 
 #include "aprendizagem.h"
+#include "../conhecimento/conceitos.h"
 
 char *extrairValor(
         const char *frase,
@@ -176,4 +177,90 @@ int aprenderPerfil(
     }
 
     return 0;
+}
+int aprenderConhecimento(
+        BaseConhecimento *base,
+        const char *frase,
+        char *resposta)
+{
+    char copia[256];
+
+    strcpy(copia, frase);
+
+    copia[strcspn(copia, "\n")] = '\0';
+
+    if(strchr(copia, '?'))
+        return 0;
+
+    if(strncmp(copia, "o que", 5) == 0)
+        return 0;
+
+    if(strncmp(copia, "quem", 4) == 0)
+        return 0;
+
+    if(strncmp(copia, "onde", 4) == 0)
+        return 0;
+
+    char *pos = NULL;
+    char relacao[100];
+
+    pos = strstr(copia, " foi criado por ");
+
+    if(pos)
+        strcpy(relacao, "foi criado por");
+
+    if(pos == NULL)
+    {
+        pos = strstr(copia, " fica em ");
+
+        if(pos)
+            strcpy(relacao, "fica em");
+    }
+
+    if(pos == NULL)
+    {
+        pos = strstr(copia, " é ");
+
+        if(pos)
+            strcpy(relacao, "eh");
+    }
+
+    if(pos == NULL)
+    {
+        pos = strstr(copia, " e ");
+
+        if(pos)
+            strcpy(relacao, "eh");
+    }
+
+    if(pos == NULL)
+        return 0;
+
+    char sujeito[100];
+    char objeto[200];
+
+    int tamanhoRelacao = strlen(relacao);
+
+    strncpy(sujeito, copia, pos - copia);
+    sujeito[pos - copia] = '\0';
+
+    strcpy(objeto, pos + tamanhoRelacao + 2);
+
+    if(strlen(sujeito) == 0 || strlen(objeto) == 0)
+        return 0;
+
+    adicionarRelacao(
+            base,
+            sujeito,
+            relacao,
+            objeto);
+
+    sprintf(
+            resposta,
+            "Aprendi que %s %s %s.",
+            sujeito,
+            relacao,
+            objeto);
+
+    return 1;
 }
