@@ -1,3 +1,10 @@
+/* ==========================================================================
+ * trie.c — Árvore de prefixos para intenções
+ *
+ * Implementação da trie que associa palavras em minúsculas a intenções
+ * do interpretador, suportando inserção, procura e libertação recursiva.
+ * ========================================================================== */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -5,10 +12,12 @@
 
 #include "trie.h"
 
+/**
+ * Aloca um nó trie vazio com filhos nulos e intenção desconhecida.
+ */
 static TrieNo *criarNo(void)
 {
-    TrieNo *novo =
-        malloc(sizeof(TrieNo));
+    TrieNo *novo = malloc(sizeof(TrieNo));
 
     if(novo == NULL)
     {
@@ -27,20 +36,22 @@ static TrieNo *criarNo(void)
 
 }
 
+/**
+ * Cria a estrutura trie com nó raiz inicializado.
+ */
 Trie *criarTrie(void)
 {
-    Trie *trie =
-        malloc(sizeof(Trie));
+    Trie *trie = malloc(sizeof(Trie));
 
     trie->raiz = criarNo();
 
     return trie;
 }
 
-void inserirPalavraTrie(
-        Trie *trie,
-        const char *palavra,
-        Intencao intencao)
+/**
+ * Insere uma palavra na trie, ignorando caracteres fora de a-z.
+ */
+void inserirPalavraTrie(Trie *trie, const char *palavra, Intencao intencao)
 {
     TrieNo *atual = trie->raiz;
 
@@ -69,6 +80,9 @@ void inserirPalavraTrie(
     atual->intencao = intencao;
 }
 
+/**
+ * Procura a intenção associada a uma palavra percorrendo a trie.
+ */
 Intencao procurarPalavraTrie(
         Trie *trie,
         const char *palavra)
@@ -104,6 +118,9 @@ Intencao procurarPalavraTrie(
     return INTENCAO_DESCONHECIDA;
 }
 
+/**
+ * Liberta recursivamente a sub-árvore a partir de um nó.
+ */
 static void destruirNos(
         TrieNo *no)
 {
@@ -121,6 +138,9 @@ static void destruirNos(
     free(no);
 }
 
+/**
+ * Liberta todos os nós da trie e a estrutura contêiner.
+ */
 void destruirTrie(
         Trie *trie)
 {

@@ -1,12 +1,21 @@
+/* ==========================================================================
+ * emocoes.c — Estado emocional da Tsunade
+ *
+ * Ciclo de vida do estado emocional, transições via grafo e
+ * visualização dos traços afectivos da Tsunade.
+ * ========================================================================== */
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "emocoes.h"
 
+/**
+ * Aloca estado emocional inicial (feliz) com grafo padrão construído.
+ */
 Emocoes *criarEmocoes(void)
 {
-    Emocoes *e =
-        malloc(sizeof(Emocoes));
+    Emocoes *e = malloc(sizeof(Emocoes));
 
     if(e==NULL)
     {
@@ -22,27 +31,28 @@ Emocoes *criarEmocoes(void)
 
     e->empatia = 90;
 
-    e->grafo =
-        criarGrafoEmocoes();
+    e->grafo = criarGrafoEmocoes();
 
     return e;
 }
 
-void destruirEmocoes(
-        Emocoes *e)
+/**
+ * Liberta grafo emocional e estrutura de emoções.
+ */
+void destruirEmocoes(Emocoes *e)
 {
     if(e==NULL)
         return;
 
-    destruirGrafoEmocoes(
-            e->grafo);
+    destruirGrafoEmocoes(e->grafo);
 
     free(e);
 }
 
-void mudarEstado(
-        Emocoes *e,
-        EstadoEmocional novo)
+/**
+ * Atribui directamente um novo estado emocional.
+ */
+void mudarEstado(Emocoes *e, EstadoEmocional novo)
 {
     if(e==NULL)
         return;
@@ -50,22 +60,21 @@ void mudarEstado(
     e->estado=novo;
 }
 
-void avancarEmocao(
-        Emocoes *e,
-        int escolha)
+/**
+ * Transita para o estado vizinho indicado pelo índice no grafo.
+ */
+void avancarEmocao(Emocoes *e, int escolha)
 {
     if(e==NULL)
         return;
 
-    e->estado =
-        proximoEstado(
-                e->grafo,
-                e->estado,
-                escolha);
+    e->estado = proximoEstado(e->grafo, e->estado, escolha);
 }
 
-const char *nomeEstado(
-        EstadoEmocional estado)
+/**
+ * Converte enum EstadoEmocional em string descritiva.
+ */
+const char *nomeEstado(EstadoEmocional estado)
 {
     switch(estado)
     {
@@ -95,8 +104,10 @@ const char *nomeEstado(
     }
 }
 
-void mostrarEmocoes(
-        Emocoes *e)
+/**
+ * Imprime estado, energia, curiosidade e empatia no ecrã.
+ */
+void mostrarEmocoes(Emocoes *e)
 {
     if(e==NULL)
         return;
@@ -105,17 +116,13 @@ void mostrarEmocoes(
 
     printf("========== EMOÇÕES ==========\n");
 
-    printf("Estado       : %s\n",
-           nomeEstado(e->estado));
+    printf("Estado       : %s\n", nomeEstado(e->estado));
 
-    printf("Energia      : %d\n",
-           e->energia);
+    printf("Energia      : %d\n", e->energia);
 
-    printf("Curiosidade  : %d\n",
-           e->curiosidade);
+    printf("Curiosidade  : %d\n", e->curiosidade);
 
-    printf("Empatia      : %d\n",
-           e->empatia);
+    printf("Empatia      : %d\n", e->empatia);
 
     printf("=============================\n");
 }

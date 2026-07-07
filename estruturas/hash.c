@@ -1,10 +1,19 @@
+/* ==========================================================================
+ * hash.c — Tabela hash encadeada
+ *
+ * Implementação de tabela hash com encadeamento por colisão, função
+ * de dispersão polinomial e operações de inserção e procura.
+ * ========================================================================== */
+
 #include <stdlib.h>
 #include <string.h>
 
 #include "hash.h"
 
-static unsigned hashString(
-        const char *s)
+/**
+ * Calcula o índice do bucket para uma chave string.
+ */
+static unsigned hashString(const char *s)
 {
     unsigned h = 0;
 
@@ -17,6 +26,9 @@ static unsigned hashString(
     return h % HASH_SIZE;
 }
 
+/**
+ * Aloca uma tabela hash com todos os buckets inicializados a NULL.
+ */
 Hash *criarHash(void)
 {
     Hash *h = malloc(sizeof(Hash));
@@ -30,6 +42,9 @@ Hash *criarHash(void)
     return h;
 }
 
+/**
+ * Liberta todos os nós encadeados e a estrutura da tabela hash.
+ */
 void destruirHash(Hash *h)
 {
     if(h == NULL)
@@ -50,10 +65,10 @@ void destruirHash(Hash *h)
     free(h);
 }
 
-void inserirHash(
-        Hash *h,
-        const char *chave,
-        void *valor)
+/**
+ * Insere um par chave-valor na cabeça do bucket correspondente.
+ */
+void inserirHash(Hash *h, const char *chave,void *valor)
 {
     unsigned pos = hashString(chave);
 
@@ -68,9 +83,10 @@ void inserirHash(
     h->buckets[pos] = n;
 }
 
-void *procurarHash(
-        Hash *h,
-        const char *chave)
+/**
+ * Procura um valor pela chave percorrendo a lista do bucket.
+ */
+void *procurarHash(Hash *h, const char *chave)
 {
     unsigned pos = hashString(chave);
 
@@ -86,4 +102,3 @@ void *procurarHash(
 
     return NULL;
 }
-   

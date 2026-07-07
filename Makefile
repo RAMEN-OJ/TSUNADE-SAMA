@@ -2,60 +2,67 @@ CC = gcc
 
 CFLAGS = -Wall -Wextra -std=c11 -g
 
-SRC = \
-main.c \
-admin/admin.c \
-core/tsunade.c \
-core/motor.c \
-\
-conhecimento/vocabulario.c \
-conhecimento/conceitos.c \
-\
-estruturas/trie.c \
-estruturas/hash.c \
-\
-cognitivo/parser.c \
-cognitivo/interpretacao.c \
-cognitivo/executor.c \
-cognitivo/decisor.c \
-cognitivo/interpretador.c \
-cognitivo/analisador.c \
-cognitivo/aprendizagem.c \
-cognitivo/consulta.c \
-cognitivo/memoria_busca.c \
-cognitivo/inferencia.c \
-cognitivo/motor_cognitivo.c \
-cognitivo/bfs_semantico.c \
-\
-educacao/educacao.c \
-\
-dialogo/contexto.c \
-dialogo/respostas.c \
-\
-memoria/perfil.c \
-memoria/episodios.c \
-memoria/memoria_imediata.c \
-\
-personalidade/grafo_emocoes.c \
-personalidade/gestor_emocional.c \
-personalidade/emocoes.c
-
-OBJ = $(SRC:.c=.o)
+OBJS = \
+main.o \
+core/tsunade.o \
+core/motor.o \
+core/crianca.o \
+core/dados.o \
+conhecimento/vocabulario.o \
+conhecimento/conceitos.o \
+conhecimento/grafo_inferencia.o \
+estruturas/trie.o \
+estruturas/hash.o \
+cognitivo/parser.o \
+cognitivo/interpretacao.o \
+cognitivo/executor.o \
+cognitivo/decisor.o \
+cognitivo/interpretador.o \
+cognitivo/analisador.o \
+cognitivo/aprendizagem.o \
+cognitivo/consulta.o \
+cognitivo/memoria_busca.o \
+cognitivo/inferencia.o \
+cognitivo/motor_cognitivo.o \
+cognitivo/bfs_semantico.o \
+educacao/educacao.o \
+educacao/atividades.o \
+educacao/licoes_data.o \
+educacao/historias_data.o \
+educacao/jogos_data.o \
+interface/ui.o \
+dialogo/contexto.o \
+dialogo/respostas.o \
+memoria/perfil.o \
+memoria/episodios.o \
+memoria/memoria_imediata.o \
+personalidade/grafo_emocoes.o \
+personalidade/gestor_emocional.o \
+personalidade/emocoes.o \
+admin/admin.o \
+crianca/painel_crianca.o \
+crianca/comportamento.o \
+crianca/decisao.o \
+crianca/grafo_decisao.o \
+pais/painel_pais.o
 
 EXEC = tsunade
 
 all: $(EXEC)
 
-$(EXEC): $(OBJ)
-	$(CC) $(OBJ) -o $(EXEC)
+$(EXEC): $(OBJS)
+	$(CC) $(OBJS) -o $(EXEC)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJ) $(EXEC)
+	rm -f $(OBJS) $(EXEC)
 
 run: $(EXEC)
 	./$(EXEC)
 
 rebuild: clean all
+
+test:
+	$(MAKE) -C tests run

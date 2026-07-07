@@ -1,24 +1,33 @@
+/* ==========================================================================
+ * grafo_emocoes.c — Grafo de transições emocionais
+ *
+ * Implementação do grafo de estados emocionais com criação de nós
+ * dinâmica, ligações ponderadas e topologia padrão da personalidade.
+ * ========================================================================== */
+
 #include <stdlib.h>
 
 #include "grafo_emocoes.h"
 
-static NoEmocional *buscarNo(
-        GrafoEmocoes *g,
-        EstadoEmocional estado)
+/**
+ * Procura nó correspondente a um estado emocional no grafo.
+ */
+static NoEmocional *buscarNo(GrafoEmocoes *g, EstadoEmocional estado)
 {
     for(int i=0;i<g->quantidade;i++)
     {
         if(g->nos[i].estado==estado)
             return &g->nos[i];
     }
-
     return NULL;
 }
 
+/**
+ * Aloca grafo emocional e constrói ligações padrão.
+ */
 GrafoEmocoes *criarGrafoEmocoes(void)
 {
-    GrafoEmocoes *g =
-        malloc(sizeof(GrafoEmocoes));
+    GrafoEmocoes *g = malloc(sizeof(GrafoEmocoes));
 
     if(g==NULL)
         return NULL;
@@ -30,27 +39,25 @@ GrafoEmocoes *criarGrafoEmocoes(void)
     return g;
 }
 
-void destruirGrafoEmocoes(
-        GrafoEmocoes *g)
+/**
+ * Liberta memória do grafo emocional.
+ */
+void destruirGrafoEmocoes(GrafoEmocoes *g)
 {
     free(g);
 }
 
-void adicionarLigacao(
-        GrafoEmocoes *g,
-        EstadoEmocional origem,
-        EstadoEmocional destino,
-        int peso)
+/**
+ * Regista ligação ponderada, criando nó de origem se necessário.
+ */
+void adicionarLigacao(GrafoEmocoes *g, EstadoEmocional origem, EstadoEmocional destino, int peso)
 {
-    NoEmocional *no =
-        buscarNo(g, origem);
+    NoEmocional *no = buscarNo(g, origem);
 
     if(no==NULL)
     {
         no=&g->nos[g->quantidade++];
-
         no->estado=origem;
-
         no->quantidade=0;
     }
 
@@ -60,13 +67,12 @@ void adicionarLigacao(
     no->quantidade++;
 }
 
-EstadoEmocional proximoEstado(
-        GrafoEmocoes *g,
-        EstadoEmocional atual,
-        int indice)
+/**
+ * Devolve estado destino da transição indexada a partir do estado actual.
+ */
+EstadoEmocional proximoEstado(GrafoEmocoes *g, EstadoEmocional atual, int indice)
 {
-    NoEmocional *no =
-        buscarNo(g, atual);
+    NoEmocional *no = buscarNo(g, atual);
 
     if(no==NULL)
         return atual;
@@ -77,8 +83,10 @@ EstadoEmocional proximoEstado(
     return no->vizinhos[indice].destino;
 }
 
-void construirGrafoPadrao(
-        GrafoEmocoes *g)
+/**
+ * Define transições emocionais predefinidas da personalidade Tsunade.
+ */
+void construirGrafoPadrao(GrafoEmocoes *g)
 {
     adicionarLigacao(g,FELIZ,CURIOSA,5);
     adicionarLigacao(g,FELIZ,ORGULHOSA,3);

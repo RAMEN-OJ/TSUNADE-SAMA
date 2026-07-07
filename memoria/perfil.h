@@ -1,9 +1,19 @@
+/* ==========================================================================
+ * perfil.h — Perfil da criança
+ *
+ * Estrutura com identidade, estado afectivo/fisiológico, preferências
+ * e métricas de progresso diário da criança virtual.
+ * ========================================================================== */
+
 #ifndef PERFIL_H
 #define PERFIL_H
 
-typedef struct {
+/** Perfil persistente da criança com identidade, estado e estatísticas. */
+typedef struct
+{
+    /* ---------- Identidade ---------- */
 
-    char nome[50];
+    char nome[100];
 
     int idade;
 
@@ -13,19 +23,46 @@ typedef struct {
 
     char comidaFavorita[50];
 
+    /* ---------- Estado actual ---------- */
+
+    int energia;
+
+    int humor;
+
+    int curiosidade;
+
+    int atencao;
+
+    int fome;
+
+    /* ---------- Progresso do dia ---------- */
+
+    int tempoEstudo;
+
+    int tempoBrincadeira;
+
+    int tempoDescanso;
+
+    int historiasOuvidas;
+
+    int perguntasRespondidas;
+
+    int conhecimentosAprendidos;
+
     int totalConversas;
 
 } PerfilCrianca;
 
+/** Cria perfil com valores por omissão. */
 PerfilCrianca *criarPerfil(void);
 
-void destruirPerfil(
-        PerfilCrianca *p);
+/** Liberta a estrutura do perfil. */
+void destruirPerfil(PerfilCrianca *p);
 
-void salvarPerfil(
-        PerfilCrianca *p);
+/** Persiste o perfil em dados/perfil.dat. */
+void salvarPerfil(PerfilCrianca *p);
 
-void carregarPerfil(
-        PerfilCrianca *p);
+/** Carrega o perfil a partir de dados/perfil.dat. */
+void carregarPerfil(PerfilCrianca *p);
 
 #endif

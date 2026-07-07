@@ -1,9 +1,17 @@
+/* ==========================================================================
+ * memoria_imediata.h — Memória imediata (buffer circular)
+ *
+ * Buffer circular de mensagens recentes da conversa para contexto
+ * de curto prazo e diagnóstico administrativo.
+ * ========================================================================== */
+
 #ifndef MEMORIA_IMEDIATA_H
 #define MEMORIA_IMEDIATA_H
 
 #define TAM_MEMORIA 10
 #define TAM_MSG 256
 
+/** Buffer circular de mensagens recentes da sessão. */
 typedef struct {
 
     char mensagens[TAM_MEMORIA][TAM_MSG];
@@ -16,21 +24,19 @@ typedef struct {
 
 } MemoriaImediata;
 
-
-/* CriaÃÂ§ÃÂ£o */
-
+/** Cria buffer circular de memória imediata vazio. */
 MemoriaImediata *criarMemoriaImediata(void);
 
-/* LibertaÃÂ§ÃÂ£o */
-
+/** Liberta a estrutura de memória imediata. */
 void destruirMemoriaImediata(MemoriaImediata *m);
 
-/* Adicionar mensagem */
-
+/** Adiciona mensagem ao buffer, descartando a mais antiga se cheio. */
 void adicionarMensagem(MemoriaImediata *m, const char *msg);
 
-/* Mostrar memÃÂ³ria */
-
+/** Imprime mensagens recentes para diagnóstico. */
 void mostrarMemoriaImediata(MemoriaImediata *m);
+
+/** Reinicia o buffer circular de memória imediata. */
+void limparMemoriaImediata(MemoriaImediata *m);
 
 #endif

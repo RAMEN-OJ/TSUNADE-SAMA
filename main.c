@@ -1,45 +1,36 @@
+/*======================================================================
+  main.c
+  Ponto de entrada da aplicação Tsunade-Sama.
+  Inicializa a interface, cria a instância e executa o ciclo principal.
+======================================================================*/
+
 #include <stdio.h>
-#include <string.h>
+#include <stdlib.h>
+#include <time.h>
+
 #include "core/tsunade.h"
 #include "core/motor.h"
-#include "cognitivo/bfs_semantico.h"
-#include "cognitivo/inferencia.h"
+#include "interface/ui.h"
+
+/* Função principal: inicializa UI e Tsunade, corre o ciclo de interação até sair; retorna 0 */
 int main(void)
 {
-    Tsunade *t = criarTsunade();
+    Tsunade *t;
 
+    /* --- inicialização --- */
+    ui_inicializar();
+    srand((unsigned)time(NULL));
+
+    t = criarTsunade();
     apresentarTsunade(t);
-    imprimirGrafo(
-        t->conhecimento);
 
-    printf("\n=== TESTE BFS ===\n");
-
-    char caminho[100][100];
-int qtd;
-
-if(encontrarCaminho(
-        t->conhecimento,
-        "Angola",
-        "Africa",
-        caminho,
-        &qtd))
-{
-    printf("\nCAMINHO:\n");
-
-    for(int i=0;i<qtd;i++)
-    {
-        printf("%s\n",caminho[i]);
-    }
-}
-
-
-    printf("=================\n\n");
-
+    /* --- ciclo principal --- */
     while(t->ativa)
     {
         executarCiclo(t);
     }
 
+    /* --- encerramento --- */
     destruirTsunade(t);
 
     return 0;

@@ -1,3 +1,10 @@
+/* ==========================================================================
+ * grafo_emocoes.h — Grafo de transições emocionais
+ *
+ * Grafo orientado que modela transições entre estados emocionais
+ * da Tsunade com pesos associados a cada ligação.
+ * ========================================================================== */
+
 #ifndef GRAFO_EMOCOES_H
 #define GRAFO_EMOCOES_H
 
@@ -5,6 +12,7 @@
 
 #define MAX_ESTADOS 10
 
+/** Aresta ponderada entre dois estados emocionais. */
 typedef struct
 {
     EstadoEmocional destino;
@@ -13,6 +21,7 @@ typedef struct
 
 } LigacaoEmocional;
 
+/** Nó do grafo com lista de transições emocionais possíveis. */
 typedef struct
 {
     EstadoEmocional estado;
@@ -23,6 +32,7 @@ typedef struct
 
 } NoEmocional;
 
+/** Grafo completo de estados e transições emocionais. */
 typedef struct
 {
     NoEmocional nos[MAX_ESTADOS];
@@ -31,23 +41,19 @@ typedef struct
 
 } GrafoEmocoes;
 
+/** Cria grafo emocional com topologia padrão. */
 GrafoEmocoes *criarGrafoEmocoes(void);
 
-void destruirGrafoEmocoes(
-        GrafoEmocoes *g);
+/** Liberta estrutura do grafo emocional. */
+void destruirGrafoEmocoes(GrafoEmocoes *g);
 
-void adicionarLigacao(
-        GrafoEmocoes *g,
-        EstadoEmocional origem,
-        EstadoEmocional destino,
-        int peso);
+/** Adiciona ligação ponderada entre estados emocionais. */
+void adicionarLigacao(GrafoEmocoes *g, EstadoEmocional origem, EstadoEmocional destino, int peso);
 
-EstadoEmocional proximoEstado(
-        GrafoEmocoes *g,
-        EstadoEmocional atual,
-        int indice);
+/** Obtém destino da transição pelo índice no nó actual. */
+EstadoEmocional proximoEstado(GrafoEmocoes *g, EstadoEmocional atual, int indice);
 
-void construirGrafoPadrao(
-        GrafoEmocoes *g);
+/** Constrói topologia emocional predefinida da Tsunade. */
+void construirGrafoPadrao(GrafoEmocoes *g);
 
 #endif
